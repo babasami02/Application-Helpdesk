@@ -1,6 +1,6 @@
 # 🎫 HelpDesk Manager
 
-> Système de gestion de tickets d'assistance développé dans le cadre d'un projet de fin d'études (PFE) à **EMSI** en partenariat avec **NOVEC — Groupe CDG**.
+> Système de gestion de tickets d'assistance développé dans le cadre d'un projet de fin d'études (PFE) en partenariat avec **NOVEC — Groupe CDG**.
 
 ---
 
