@@ -1,0 +1,304 @@
+﻿@model HelpDesk_Manager.Models.Intervention
+@{
+    ViewData["Title"] = $"Intervention #{Model.NumeroIntervention}";
+    var estTerminee = Model.Statut?.NomStatut == "Terminée" ||
+                      Model.Statut?.NomStatut == "Annulée";
+}
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>Intervention #@Model.NumeroIntervention</h1>
+        <p>Ticket #@Model.Ticket?.NumeroAnnuel/@Model.Ticket?.DateOuverture.Year — @Model.Ticket?.Titre</p>
+    </div>
+    @{
+        var couleur = Model.Statut?.NomStatut switch
+        {
+            "Planifiée" => "#1565c0",
+            "En cours" => "#f57f17",
+            "Suspendue" => "#c62828",
+            "Terminée" => "#2e7d32",
+            _ => "#616161"
+        };
+        var bg = Model.Statut?.NomStatut switch
+        {
+            "Planifiée" => "#e3f2fd",
+            "En cours" => "#fff8e1",
+            "Suspendue" => "#fce4ec",
+            "Terminée" => "#e8f5e9",
+            _ => "#f5f5f5"
+        };
+    }
+    <span style="background:@bg;color:@couleur;padding:6px 16px;border-radius:20px;
+                 font-size:14px;font-weight:600;">
+        @Model.Statut?.NomStatut
+    </span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+
+    @* ── COLONNE GAUCHE ─────────────────────────────────────── *@
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+        @* Infos ticket *@
+        <div class="card">
+            <div class="card-header"><h3>📋 Ticket associé</h3></div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                                    text-transform:uppercase;margin-bottom:4px;">
+                            Sujet
+                        </div>
+                        <div style="font-weight:500;">@Model.Ticket?.Titre</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                                    text-transform:uppercase;margin-bottom:4px;">
+                            Demandeur
+                        </div>
+                        <div>@Model.Ticket?.Demandeur?.NomComplet</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                text-transform:uppercase;margin-bottom:4px;">
+                            Priorité
+                        </div>
+                        <div>
+                            @if (!string.IsNullOrEmpty(Model.Ticket?.PrioriteCalculee))
+                            {
+                                var c = Model.Ticket.PrioriteCalculee switch
+                                {
+                                    "P1" => "#dc3545",
+                                    "P2" => "#fd7e14",
+                                    "P3" => "#ffc107",
+                                    "P4" => "#28a745",
+                                    _ => "#888"
+                                };
+                                <span style="background:@c;color:white;padding:2px 10px;
+                         border-radius:20px;font-size:11px;font-weight:700;">
+                                    @Model.Ticket.PrioriteCalculee
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color:#ccc;">—</span>
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                                    text-transform:uppercase;margin-bottom:4px;">
+                            Statut ticket
+                        </div>
+                        <div>@Model.Ticket?.Statut?.NomStatut</div>
+                    </div>
+                </div>
+                <div style="margin-top:16px;">
+                    <div style="font-size:11px;color:#888;font-weight:600;
+                                text-transform:uppercase;margin-bottom:4px;">
+                        Description
+                    </div>
+                    <div style="color:#555;line-height:1.6;white-space:pre-wrap;font-size:13px;">@Model.Ticket?.Description</div>
+                </div>
+            </div>
+        </div>
+
+        @* Ma mission *@
+        <div class="card">
+            <div class="card-header"><h3>🎯 Ma mission</h3></div>
+            <div class="card-body">
+                <div style="background:#f8f9fa;padding:12px;border-radius:8px;
+                            border-left:3px solid #1a7a5e;font-size:14px;color:#333;">
+                    @Model.DescriptionAction
+                </div>
+                @if (Model.DateDebut.HasValue)
+                {
+                    <div style="margin-top:12px;font-size:12px;color:#888;">
+                        ▶️ Démarrée le @Model.DateDebut.Value.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                }
+                @if (Model.DateFin.HasValue)
+                {
+                    <div style="font-size:12px;color:#888;">
+                        ✅ Terminée le @Model.DateFin.Value.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Notes *@
+        <div class="card">
+            <div class="card-header"><h3>📝 Mes notes & détails</h3></div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div style="background:#fffef0;border:1px solid #ffeaa7;border-radius:8px;
+                                padding:12px;margin-bottom:16px;font-size:13px;
+                                white-space:pre-wrap;line-height:1.6;color:#444;">@Model.Notes </div>
+                }
+                else
+                {
+                    <div style="color:#999;font-size:13px;margin-bottom:16px;">
+                        Aucune note pour le moment.
+                    </div>
+                }
+
+                @if (!estTerminee)
+                {
+                    <form method="post" asp-action="AjouterNote">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idIntervention" value="@Model.IdIntervention" />
+                        <textarea name="note" class="form-input" rows="3"
+                                  placeholder="Ajoutez une note, observation ou information..."
+                                  required></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm"
+                                style="margin-top:10px;">
+                            💾 Enregistrer la note
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        @* Toutes les interventions du ticket *@
+        <div class="card">
+            <div class="card-header">
+                <h3>🔧 Toutes les interventions du ticket</h3>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Technicien</th>
+                        <th>Mission</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inv in Model.Ticket?.Interventions
+                    .OrderByDescending(i => i.DateAction) ?? Enumerable.Empty<HelpDesk_Manager.Models.Intervention>())
+                    {
+                        <tr style="@(inv.IdIntervention == Model.IdIntervention ? "background:#f0faf5;" : "")">
+                            <td style="font-size:13px;font-weight:@(inv.IdIntervention == Model.IdIntervention ? "700" : "400");">
+                                @inv.Technicien?.NomComplet
+                                @if (inv.IdIntervention == Model.IdIntervention)
+                                {
+                                    <span style="color:#1a7a5e;"> ← vous</span>
+                                }
+                            </td>
+                            <td style="font-size:13px;">@inv.DescriptionAction</td>
+                            <td>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:20px;
+                                             background:#e8f5e9;color:#2e7d32;">
+                                    @inv.Statut?.NomStatut
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* Historique *@
+        <div class="card">
+            <div class="card-header"><h3>📜 Historique du ticket</h3></div>
+            <div class="card-body" style="padding:0;">
+                @foreach (var h in Model.Ticket?.Historique
+                .OrderByDescending(h => h.DateAction) ?? Enumerable.Empty<HelpDesk_Manager.Models.HistoriqueTicket>())
+                {
+                    <div style="display:flex;gap:12px;padding:12px 20px;
+                                border-bottom:1px solid #f5f5f5;">
+                        <div style="width:30px;height:30px;background:#e8f5f0;border-radius:50%;
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:13px;flex-shrink:0;">
+                            @(h.Action.Contains("Note") ? "📝" :
+                                h.Action.Contains("intervention") ? "🔧" : "🔄")
+                        </div>
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:#2d3436;">
+                                @h.Action
+                                <span style="font-weight:400;color:#888;">
+                                    — @h.Utilisateur?.NomComplet
+                                </span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(h.NouvelleValeur))
+                            {
+                                <div style="font-size:12px;color:#666;margin-top:2px;">
+                                    @h.NouvelleValeur
+                                </div>
+                            }
+                            <div style="font-size:11px;color:#aaa;margin-top:2px;">
+                                @h.DateAction.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ── COLONNE DROITE ──────────────────────────────────────── *@
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+        @* Mettre à jour statut *@
+        @if (!estTerminee)
+        {
+            <div class="card">
+                <div class="card-header"><h3>🔄 Mettre à jour le statut</h3></div>
+                <div class="card-body">
+                    <form method="post" asp-action="MettreAJourStatut">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idIntervention" value="@Model.IdIntervention" />
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Nouveau statut</label>
+                            <select name="idStatut" class="form-input" required>
+                                @foreach (var s in ViewBag.Statuts as List<HelpDesk_Manager.Models.StatutIntervention>)
+                                {
+                                    <option value="@s.IdStatut"
+                                            selected="@(s.IdStatut == Model.IdStatut)">
+                                        @s.NomStatut
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%;">
+                            Mettre à jour
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        @* Pièces jointes *@
+        @if (Model.Ticket?.PiecesJointes.Any() == true)
+        {
+            <div class="card">
+                <div class="card-header"><h3>📎 Pièces jointes</h3></div>
+                <div class="card-body">
+                    @foreach (var pj in Model.Ticket.PiecesJointes)
+                    {
+                        <div style="display:flex;align-items:center;gap:8px;padding:8px;
+                                    background:#f8f9fa;border-radius:6px;margin-bottom:6px;">
+                            <span>📄</span>
+                            <a href="@pj.CheminFichier" target="_blank"
+                               style="font-size:13px;color:#1a7a5e;">
+                                @pj.NomFichier
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .form-label {
+        display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px;
+    }
+    .form-input {
+        width:100%;padding:8px 10px;border:1.5px solid #ddd;
+        border-radius:7px;font-size:13px;outline:none;font-family:inherit;
+    }
+    .form-input:focus { border-color:#1a7a5e; }
+    textarea.form-input { resize:vertical; }
+</style>

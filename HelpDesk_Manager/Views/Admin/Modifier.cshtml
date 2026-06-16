@@ -1,0 +1,110 @@
+﻿@model HelpDesk_Manager.Models.Utilisateur
+@{
+    ViewData["Title"] = "Modifier Utilisateur";
+}
+
+<div class="page-header">
+    <h1>✏️ Modifier Utilisateur</h1>
+    <p>@Model.NomComplet — @Model.Email</p>
+</div>
+
+<div style="max-width:700px;">
+    <div class="card">
+        <div class="card-header"><h3>Informations du compte</h3></div>
+        <div class="card-body">
+            <form method="post" asp-action="Modifier" asp-route-id="@Model.IdUtilisateur">
+                @Html.AntiForgeryToken()
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <label class="form-label">Prénom *</label>
+                        <input asp-for="Prenom" class="form-input" required />
+                    </div>
+                    <div>
+                        <label class="form-label">Nom *</label>
+                        <input asp-for="Nom" class="form-input" required />
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label class="form-label">Email *</label>
+                    <input asp-for="Email" type="email" class="form-input" required />
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label class="form-label">
+                        Nouveau mot de passe
+                        <span style="color:#888;font-weight:400;">(laisser vide pour ne pas changer)</span>
+                    </label>
+                    <input type="password" name="nouveauMotDePasse" class="form-input"
+                           placeholder="Nouveau mot de passe..." />
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label class="form-label">Rôle *</label>
+                    <select asp-for="IdRole" asp-items="ViewBag.Roles" class="form-input" required>
+                        <option value="">-- Sélectionner --</option>
+                    </select>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <label class="form-label">Direction</label>
+                        <input asp-for="Direction" class="form-input" />
+                    </div>
+                    <div>
+                        <label class="form-label">Département</label>
+                        <input asp-for="Departement" class="form-input" />
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <label class="form-label">Niveau</label>
+                        <select asp-for="Niveau" class="form-input">
+                            <option value="">—</option>
+                            <option value="N1">N1</option>
+                            <option value="N2">N2</option>
+                            <option value="N3">N3</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Spécialité</label>
+                        <input asp-for="Specialite" class="form-input" />
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label class="form-label">Téléphone</label>
+                    <input asp-for="Telephone" class="form-input" />
+                </div>
+
+                <div style="margin-bottom:24px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input asp-for="IsActive" type="checkbox"
+                               style="width:16px;height:16px;" />
+                        <span style="font-size:13px;font-weight:600;color:#444;">
+                            Compte actif
+                        </span>
+                    </label>
+                </div>
+
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-label {
+        display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:6px;
+    }
+    .form-input {
+        width:100%;padding:10px 12px;border:1.5px solid #ddd;
+        border-radius:8px;font-size:14px;font-family:inherit;outline:none;
+    }
+    .form-input:focus { border-color:#1a7a5e; }
+</style>

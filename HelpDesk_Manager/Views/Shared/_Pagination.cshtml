@@ -1,0 +1,76 @@
+﻿@{
+    Layout = null;
+}
+@{
+    var pageActuelle = (int)ViewData["PageActuelle"]!;
+    var totalPages = (int)ViewData["TotalPages"]!;
+    var totalItems = (int)ViewData["TotalItems"]!;
+    var pageSize = (int)ViewData["PageSize"]!;
+    var action = ViewData["Action"] as string ?? "Index";
+    var controller = ViewData["Controller"] as string ?? "";
+    var routeValues = ViewData["RouteValues"] as Dictionary<string, string> ?? new();
+}
+
+@if (totalPages > 1)
+{
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:16px 20px;border-top:1px solid #f0f0f0;">
+        <div style="font-size:13px;color:#888;">
+            Affichage de
+            <strong>@((pageActuelle - 1) * pageSize + 1)</strong>
+            à
+            <strong>@Math.Min(pageActuelle * pageSize, totalItems)</strong>
+            sur <strong>@totalItems</strong> résultats
+        </div>
+
+        <div style="display:flex;gap:4px;">
+            @* Première page *@
+            @if (pageActuelle > 1)
+            {
+                var rv = new Dictionary<string, string>(routeValues) { ["page"] = "1" };
+                <a href="@Url.Action(action, controller, rv)"
+                   style="@StyleBouton(false)">«</a>
+
+                var rvPrev = new Dictionary<string, string>(routeValues)
+                    { ["page"] = (pageActuelle - 1).ToString() };
+                <a href="@Url.Action(action, controller, rvPrev)"
+                   style="@StyleBouton(false)">‹</a>
+            }
+
+            @* Pages autour de la page actuelle *@
+            @for (int i = Math.Max(1, pageActuelle - 2);
+           i <= Math.Min(totalPages, pageActuelle + 2); i++)
+            {
+                var rv = new Dictionary<string, string>(routeValues)
+                    { ["page"] = i.ToString() };
+                <a href="@Url.Action(action, controller, rv)"
+                   style="@StyleBouton(i == pageActuelle)">@i</a>
+            }
+
+            @* Dernière page *@
+            @if (pageActuelle < totalPages)
+            {
+                var rvNext = new Dictionary<string, string>(routeValues)
+                    { ["page"] = (pageActuelle + 1).ToString() };
+                <a href="@Url.Action(action, controller, rvNext)"
+                   style="@StyleBouton(false)">›</a>
+
+                var rv = new Dictionary<string, string>(routeValues)
+                    { ["page"] = totalPages.ToString() };
+                <a href="@Url.Action(action, controller, rv)"
+                   style="@StyleBouton(false)">»</a>
+            }
+        </div>
+    </div>
+}
+
+@functions {
+    string StyleBouton(bool actif) =>
+        actif
+        ? "display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;" +
+          "border-radius:6px;font-size:13px;font-weight:700;text-decoration:none;" +
+          "background:#1a7a5e;color:white;"
+        : "display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;" +
+          "border-radius:6px;font-size:13px;font-weight:500;text-decoration:none;" +
+          "background:#f8f9fa;color:#444;border:1px solid #ddd;";
+}

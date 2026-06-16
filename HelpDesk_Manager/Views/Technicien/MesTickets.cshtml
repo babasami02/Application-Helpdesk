@@ -1,0 +1,138 @@
+﻿@model List<HelpDesk_Manager.Models.Intervention>
+@{
+    ViewData["Title"] = "Mes Interventions";
+}
+
+<div class="page-header">
+    <h1>Mes Interventions</h1>
+    <p>Liste de toutes vos interventions assignées</p>
+</div>
+
+@* Filtres *@
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-body" style="padding:14px 20px;">
+        <form method="get" style="display:flex;gap:12px;align-items:center;">
+            <select name="statut"
+                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;
+                           font-size:13px;outline:none;">
+                <option value="">Tous les statuts</option>
+                @foreach (var s in ViewBag.Statuts as List<HelpDesk_Manager.Models.StatutIntervention>)
+                {
+                    <option value="@s.NomStatut"
+                            selected="@(ViewBag.Statut == s.NomStatut ? "selected" : null)">
+                        @s.NomStatut
+                    </option>
+                }
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+            @if (ViewBag.Statut != null)
+            {
+                <a href="@Url.Action("MesTickets")" class="btn btn-secondary btn-sm">
+                    ✕ Réinitialiser
+                </a>
+            }
+        </form>
+    </div>
+</div>
+
+@* Tableau *@
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>N° Ticket</th>
+                <th>Sujet</th>
+                <th>Mission</th>
+                <th>Demandeur</th>
+                <th>Priorité</th>
+                <th>Statut intervention</th>
+                <th>Date assignation</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:40px;color:#999;">
+                        Aucune intervention assignée.
+                    </td>
+                </tr>
+            }
+            @foreach (var i in Model)
+            {
+                <tr>
+                    <td>
+                        <span style="color:#1a7a5e;font-weight:700;">
+                            @i.Ticket?.NumeroAnnuel/@i.Ticket?.DateOuverture.Year - @i.NumeroIntervention
+                        </span>
+                    </td>
+                    <td style="max-width:160px;font-weight:500;">
+                        @i.Ticket?.Titre
+                    </td>
+                    <td style="font-size:13px;color:#555;max-width:180px;">
+                        @i.DescriptionAction
+                    </td>
+                    <td style="font-size:13px;">
+                        @i.Ticket?.Demandeur?.NomComplet
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(i.Ticket?.PrioriteCalculee))
+                        {
+                            var couleurP = i.Ticket.PrioriteCalculee switch
+                            {
+                                "P1" => "#dc3545",
+                                "P2" => "#fd7e14",
+                                "P3" => "#ffc107",
+                                "P4" => "#28a745",
+                                _ => "#888"
+                            };
+                            <span style="background:@couleurP;color:white;padding:2px 10px;
+                     border-radius:20px;font-size:11px;font-weight:700;">
+                                @i.Ticket.PrioriteCalculee
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="color:#ccc;">—</span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var couleur = i.Statut?.NomStatut switch
+                            {
+                                "Planifiée" => "#e3f2fd",
+                                "En cours" => "#fff8e1",
+                                "Suspendue" => "#fce4ec",
+                                "Terminée" => "#e8f5e9",
+                                "Annulée" => "#f5f5f5",
+                                _ => "#f5f5f5"
+                            };
+                            var texte = i.Statut?.NomStatut switch
+                            {
+                                "Planifiée" => "#1565c0",
+                                "En cours" => "#f57f17",
+                                "Suspendue" => "#c62828",
+                                "Terminée" => "#2e7d32",
+                                _ => "#616161"
+                            };
+                        }
+                        <span style="background:@couleur;color:@texte;padding:3px 10px;
+                                     border-radius:20px;font-size:11px;font-weight:600;">
+                            @i.Statut?.NomStatut
+                        </span>
+                    </td>
+                    <td style="font-size:12px;color:#888;">
+                        @i.DateAction.ToString("dd/MM/yyyy")
+                    </td>
+                    <td>
+                        <a href="@Url.Action("Details", new { id = i.IdIntervention })"
+                           class="btn btn-primary btn-sm">
+                            Ouvrir →
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

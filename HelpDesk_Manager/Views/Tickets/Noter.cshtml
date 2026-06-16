@@ -1,0 +1,126 @@
+﻿@model HelpDesk_Manager.Models.Ticket
+@{
+    ViewData["Title"] = $"Noter le ticket #{Model.IdTicket}";
+}
+
+<div class="page-header">
+    <h1>Évaluer la prestation</h1>
+    <p>Ticket #@Model.IdTicket — @Model.Titre</p>
+</div>
+
+<div style="max-width:600px;">
+    <div class="card">
+        <div class="card-header">
+            <h3>⭐ Votre avis sur la résolution</h3>
+        </div>
+        <div class="card-body">
+
+            @* Résumé ticket *@
+            <div style="background:#f8f9fa;border-radius:8px;padding:16px;margin-bottom:24px;">
+                <div style="font-size:12px;color:#888;font-weight:600;
+                            text-transform:uppercase;margin-bottom:8px;">
+                    Ticket résolu
+                </div>
+                <div style="font-weight:600;font-size:15px;color:#2d3436;margin-bottom:4px;">
+                    @Model.Titre
+                </div>
+                <div style="font-size:13px;color:#666;">
+                    Résolu le @Model.DateResolution?.ToString("dd/MM/yyyy HH:mm")
+                </div>
+
+                @if (Model.Interventions.Any())
+                {
+                    <div style="margin-top:12px;font-size:12px;color:#888;">
+                        Technicien(s) ayant travaillé sur ce ticket :
+                        <strong>
+                            @string.Join(", ", Model.Interventions
+                                     .Select(i => i.Technicien?.NomComplet)
+                                     .Distinct())
+                        </strong>
+                    </div>
+                }
+            </div>
+
+            <form method="post" asp-action="Noter">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="idTicket" value="@Model.IdTicket" />
+                <input type="hidden" name="note" id="noteValue" value="0" />
+
+                @* Étoiles *@
+                <div style="margin-bottom:24px;">
+                    <label style="display:block;font-size:13px;font-weight:600;
+                                  color:#444;margin-bottom:12px;">
+                        Note globale <span style="color:#e74c3c;">*</span>
+                    </label>
+                    <div style="display:flex;gap:8px;" id="etoiles">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <span class="etoile" data-valeur="@i"
+                                  style="font-size:40px;cursor:pointer;color:#ddd;
+                                         transition:color 0.15s;user-select:none;">
+                                ★
+                            </span>
+                        }
+                    </div>
+                    <div id="labelNote" style="font-size:13px;color:#888;margin-top:8px;
+                                               height:20px;"></div>
+                </div>
+
+                @* Commentaire *@
+                <div style="margin-bottom:24px;">
+                    <label style="display:block;font-size:13px;font-weight:600;
+                                  color:#444;margin-bottom:6px;">
+                        Commentaire (optionnel)
+                    </label>
+                    <textarea name="commentaire" rows="4"
+                              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;
+                                     border-radius:8px;font-size:14px;font-family:inherit;
+                                     outline:none;resize:vertical;"
+                              placeholder="Décrivez votre expérience, ce qui s'est bien passé ou ce qui pourrait être amélioré..."></textarea>
+                </div>
+
+                @* Boutons *@
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Annuler</a>
+                    <button type="submit" id="btnSoumettre" class="btn btn-primary" disabled
+                            style="opacity:0.5;">
+                        ✅ Soumettre mon évaluation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const labels = {
+        1: "😞 Très insatisfait",
+        2: "😕 Insatisfait",
+        3: "😐 Neutre",
+        4: "😊 Satisfait",
+        5: "😄 Très satisfait"
+    };
+
+    const etoiles   = document.querySelectorAll('.etoile');
+    const noteInput = document.getElementById('noteValue');
+    const btnSoumettre = document.getElementById('btnSoumettre');
+    const labelNote = document.getElementById('labelNote');
+
+    etoiles.forEach(e => {
+        e.addEventListener('mouseover', () => colorier(+e.dataset.valeur, '#f39c12'));
+        e.addEventListener('mouseout',  () => colorier(+noteInput.value, '#f39c12'));
+        e.addEventListener('click', () => {
+            noteInput.value = e.dataset.valeur;
+            colorier(+e.dataset.valeur, '#f39c12');
+            labelNote.textContent = labels[e.dataset.valeur];
+            btnSoumettre.disabled = false;
+            btnSoumettre.style.opacity = '1';
+        });
+    });
+
+    function colorier(valeur, couleur) {
+        etoiles.forEach(e => {
+            e.style.color = +e.dataset.valeur <= valeur ? couleur : '#ddd';
+        });
+    }
+</script>

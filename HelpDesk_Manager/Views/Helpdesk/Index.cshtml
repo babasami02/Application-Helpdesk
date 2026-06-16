@@ -1,0 +1,179 @@
+@model List<HelpDesk_Manager.Models.Ticket>
+@{
+    ViewData["Title"] = "Consultation Tickets";
+
+}
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>Consultation Tickets</h1>
+        <p>Vue globale de tous les tickets de la plateforme</p>
+    </div>
+    <div style="display:flex;gap:8px;">
+        <span style="background:#e8f5f0;color:#1a7a5e;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;">
+            @Model.Count ticket(s)
+        </span>
+    </div>
+</div>
+
+@* Filtres *@
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-body" style="padding:14px 20px;">
+        <form method="get" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <select name="annee" style="padding:8px 12px;border:2px solid #1a7a5e;border-radius:8px;
+                             font-size:13px;outline:none;font-weight:600;color:#1a7a5e;
+                             background:#e8f5f0;" >
+                @foreach (var a in ViewBag.Annees as List<int>)
+                {
+                    <option value="@a" selected="@((int)ViewBag.Annee == a ? "selected" : null)">
+                        @a
+                    </option>
+                }
+            </select>
+            <input type="text" name="recherche" value="@ViewBag.Recherche"
+                   placeholder="🔍 N° ticket ou mot-clé..."
+                   style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;width:220px;outline:none;" />
+
+            <select name="statut"
+                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;">
+                <option value="">Tous les statuts</option>
+                @foreach (var s in ViewBag.Statuts as List<HelpDesk_Manager.Models.StatutTicket>)
+                {
+                    <option value="@s.NomStatut"
+                            selected="@(ViewBag.Statut == s.NomStatut ? "selected" : null)">
+                        @s.NomStatut
+                    </option>
+                }
+            </select>
+
+            <select name="priorite"
+                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;">
+                <option value="">Toutes priorités</option>
+                <option value="P1" selected="@(ViewBag.Priorite == "P1" ? "selected" : null)">🔴 P1 - Critique</option>
+                <option value="P2" selected="@(ViewBag.Priorite == "P2" ? "selected" : null)">🟠 P2 - Haute</option>
+                <option value="P3" selected="@(ViewBag.Priorite == "P3" ? "selected" : null)">🟡 P3 - Moyenne</option>
+                <option value="P4" selected="@(ViewBag.Priorite == "P4" ? "selected" : null)">🟢 P4 - Basse</option>
+            </select>
+
+            <select name="domaine" asp-items="ViewBag.Domaines"
+                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;">
+                <option value="">Tous les domaines</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+            @if (ViewBag.Recherche != null || ViewBag.Statut != null || ViewBag.Priorite != null || ViewBag.Domaine != null)
+            {
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">✕ Réinitialiser</a>
+            }
+        </form>
+    </div>
+</div>
+
+@* Tableau *@
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>N° Ticket</th>
+                <th>Sujet</th>
+                <th>Demandeur</th>
+                <th>Domaine</th>
+                <th>Priorité</th>
+                <th>Statut</th>
+                <th>Interventions</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="9" style="text-align:center;padding:40px;color:#999;">
+                        Aucun ticket trouvé.
+                    </td>
+                </tr>
+            }
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td>
+                        <span style="color:#1a7a5e;font-weight:700;">@t.NumeroAnnuel/@t.DateOuverture.Year</span>
+                    </td>
+                    <td style="max-width:200px;">
+                        <div style="font-weight:500;color:#2d3436;">@t.Titre</div>
+                    </td>
+                    <td style="font-size:13px;">@t.Demandeur?.NomComplet</td>
+                    <td style="font-size:13px;color:#888;">@(t.Domaine?.NomDomaine ?? "—")</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(t.PrioriteCalculee))
+                        {
+                            var couleur = t.PrioriteCalculee switch
+                            {
+                                "P1" => "#dc3545",
+                                "P2" => "#fd7e14",
+                                "P3" => "#ffc107",
+                                "P4" => "#28a745",
+                                _ => "#888"
+                            };
+                            <span style="background:@couleur;color:white;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;">
+                                @t.PrioriteCalculee
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="color:#ccc;">—</span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var css = t.Statut?.NomStatut switch
+                            {
+                                "Nouveau" => "badge-nouveau",
+                                "Hors périmètre" => "badge-hors-perimetre",
+                                "En cours" => "badge-en-cours",
+                                "Annulé" => "badge-annule",
+                                "Résolu" => "badge-resolu",
+                                "Fermé" => "badge-ferme",
+                                _ => ""
+                            };
+                        }
+                        <span class="badge @css">@t.Statut?.NomStatut</span>
+                    </td>
+                    <td style="text-align:center;">
+                        <span style="background:#f0f0f0;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600;">
+                            @t.Interventions.Count
+                        </span>
+                    </td>
+                    <td style="font-size:13px;color:#888;">
+                        @t.DateOuverture.ToString("dd/MM/yyyy")
+                    </td>
+                    <td>
+                        <a href="@Url.Action("Details", new { id = t.IdTicket })"
+                           class="btn btn-primary btn-sm">
+                            Ouvrir →
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+    @await Html.PartialAsync("_Pagination", new ViewDataDictionary(ViewData)
+{
+    ["PageActuelle"] = ViewBag.PageActuelle,
+    ["TotalPages"] = ViewBag.TotalPages,
+    ["TotalItems"] = ViewBag.TotalItems,
+    ["PageSize"] = ViewBag.PageSize,
+    ["Action"] = "Index",
+    ["Controller"] = "Helpdesk",
+    ["RouteValues"] = new Dictionary<string, string>
+    {
+        ["recherche"] = ViewBag.Recherche ?? "",
+        ["statut"] = ViewBag.Statut ?? "",
+        ["priorite"] = ViewBag.Priorite ?? "",
+        ["domaine"] = ViewBag.Domaine?.ToString() ?? "",
+        ["annee"] = ViewBag.Annee?.ToString() ?? ""
+    }
+})

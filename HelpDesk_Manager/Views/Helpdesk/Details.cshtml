@@ -1,0 +1,392 @@
+@model HelpDesk_Manager.Models.Ticket
+@{
+    ViewData["Title"] = $"Ticket #{Model.NumeroAnnuel}";
+    var estQualifie = Model.PrioriteCalculee != null;
+    var estFerme = Model.Statut?.NomStatut == "Fermé" ||
+                      Model.Statut?.NomStatut == "Annulé" ||
+                      Model.Statut?.NomStatut == "Hors périmètre" ||
+                      Model.Statut?.NomStatut == "Résolu";
+}
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>Ticket N° @Model.NumeroAnnuel/@Model.DateOuverture.Year</h1>
+        <p>@Model.Demandeur?.NomComplet — @Model.DateOuverture.ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+    @{
+        var css = Model.Statut?.NomStatut switch
+        {
+            "Nouveau" => "badge-nouveau",
+            "Hors périmètre" => "badge-hors-perimetre",
+            "En cours" => "badge-en-cours",
+            "Annulé" => "badge-annule",
+            "Résolu" => "badge-resolu",
+            "Fermé" => "badge-ferme",
+            _ => ""
+        };
+    }
+    <span class="badge @css" style="font-size:14px;padding:6px 16px;">
+        @Model.Statut?.NomStatut
+    </span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 380px;gap:20px;">
+
+    @* ── COLONNE GAUCHE ─────────────────────────────────────── *@
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+        @* Infos ticket *@
+        <div class="card">
+            <div class="card-header"><h3>📋 Détails du ticket</h3></div>
+            <div class="card-body">
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;
+                                margin-bottom:4px;">
+                        Sujet
+                    </div>
+                    <div style="font-size:16px;font-weight:600;color:#2d3436;">@Model.Titre</div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;
+                                margin-bottom:4px;">
+                        Description
+                    </div>
+                    <div style="color:#444;line-height:1.6;white-space:pre-wrap;">@Model.Description</div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px;">
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;
+                                    margin-bottom:4px;">Domaine</div>
+                        <div style="font-size:13px;margin-top:2px;">@(Model.Domaine?.NomDomaine ?? "—")</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;">Nature</div>
+                        <div style="font-size:13px;margin-top:2px;">@(Model.Nature?.NomNature ?? "—")</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;">Priorité</div>
+                        <div style="margin-top:2px;">
+                            @if (!string.IsNullOrEmpty(Model.PrioriteCalculee))
+                            {
+                                var c = Model.PrioriteCalculee switch
+                                {
+                                    "P1" => "#dc3545",
+                                    "P2" => "#fd7e14",
+                                    "P3" => "#ffc107",
+                                    _ => "#28a745"
+                                };
+                                <span style="background:@c;color:white;padding:2px 10px;
+                                             border-radius:20px;font-size:12px;font-weight:700;">
+                                    @Model.PrioriteCalculee
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color:#ccc;">Non qualifié</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* Interventions *@
+        <div class="card">
+            <div class="card-header">
+                <h3>🔧 Interventions (@Model.Interventions.Count)</h3>
+            </div>
+
+            @if (!Model.Interventions.Any())
+            {
+                <div style="padding:30px;text-align:center;color:#999;font-size:13px;">
+                    Aucune intervention pour ce ticket.
+                </div>
+            }
+            else
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Technicien</th>
+                            <th>Description</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inv in Model.Interventions.OrderByDescending(i => i.DateAction))
+                        {
+                            <tr>
+                                <td style="font-weight:600;color:#1a7a5e;">
+                                    @inv.Ticket?.NumeroAnnuel/@inv.Ticket?.DateOuverture.Year - @inv.NumeroIntervention
+                                </td>
+                                <td style="font-weight:500;">@inv.Technicien?.NomComplet</td>
+                                <td style="font-size:13px;color:#555;">@inv.DescriptionAction</td>
+                                <td>
+                                    <span class="badge" style="background:#e3f2fd;color:#1565c0;">
+                                        @inv.Statut?.NomStatut
+                                    </span>
+                                </td>
+                                <td style="font-size:12px;color:#888;">
+                                    @inv.DateAction.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            @* Ajouter intervention *@
+            @if (!estFerme)
+            {
+                <div style="padding:16px;border-top:1px solid #f0f0f0;background:#fafbfc;">
+                    <div style="font-weight:600;font-size:13px;margin-bottom:12px;color:#444;">
+                        ➕ Ajouter une intervention
+                    </div>
+                    <form method="post" asp-action="AjouterIntervention">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idTicket" value="@Model.IdTicket" />
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                            <div>
+                                <label class="form-label">Technicien *</label>
+                                <select name="idTechnicien" class="form-input" required>
+                                    <option value="">-- Sélectionner --</option>
+                                    @foreach (var item in ViewBag.Techniciens as SelectList)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Description de la mission </label>
+                                <input type="text" name="descriptionAction" class="form-input"
+                                       placeholder="Ex: Diagnostic réseau, Installation... " />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Assigner l'intervention
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+
+        @* Historique *@
+        <div class="card">
+            <div class="card-header"><h3>📜 Historique</h3></div>
+            <div class="card-body" style="padding:0;">
+                @if (!Model.Historique.Any())
+                {
+                    <div style="padding:20px;text-align:center;color:#999;font-size:13px;">
+                        Aucun historique.
+                    </div>
+                }
+                @foreach (var h in Model.Historique.OrderByDescending(h => h.DateAction))
+                {
+                    <div style="display:flex;gap:12px;padding:12px 20px;
+                                border-bottom:1px solid #f5f5f5;">
+                        <div style="width:32px;height:32px;background:#e8f5f0;border-radius:50%;
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:14px;flex-shrink:0;">
+                            @(h.Action == "Création" ? "✏️" : h.Action == "Annulation" ? "❌" :
+                            h.Action == "Hors périmètre" ? "🚫" :
+                            h.Action == "Clôture" ? "✅" : "🔄")
+                        </div>
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:#2d3436;">
+                                @h.Action
+                                <span style="font-weight:400;color:#888;">
+                                    — @h.Utilisateur?.NomComplet
+                                </span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(h.NouvelleValeur))
+                            {
+                                <div style="font-size:12px;color:#666;margin-top:2px;">
+                                    @h.NouvelleValeur
+                                </div>
+                            }
+                            <div style="font-size:11px;color:#aaa;margin-top:2px;">
+                                @h.DateAction.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ── COLONNE DROITE ──────────────────────────────────────── *@
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+        @* Qualification *@
+        @if (!estFerme)
+        {
+            <div class="card">
+                @*style="border-left:4px solid #006400;" pour left border en couleur *@
+ 
+                <div class="card-header"><h3>⚙️ Qualification</h3></div>
+                <div class="card-body">
+                    <form method="post" asp-action="Qualifier">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idTicket" value="@Model.IdTicket" />
+
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Domaine *</label>
+                            <select name="idDomaine" asp-items="ViewBag.Domaines"
+                                    class="form-input" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Nature *</label>
+                            <select name="idNature" asp-items="ViewBag.Natures" class="form-input" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Urgence *</label>
+                            <select name="idUrgence" asp-items="ViewBag.Urgences"
+                                    class="form-input" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:16px;">
+                            <label class="form-label">Impact *</label>
+                            <select name="idImpact" asp-items="ViewBag.Impacts"
+                                    class="form-input" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width:100%;">
+                            ✅ Valider la qualification
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        @* Hors périmètre *@
+        @if (!estFerme && !estQualifie)
+        {
+            <div class="card" >
+                @*style="border-left:4px solid #6f42c1;" left border en couleur *@
+                <div class="card-header"><h3>🚫 Hors périmètre</h3></div>
+                <div class="card-body">
+                    <p style="font-size:12px;color:#888;margin-bottom:10px;">
+                        La demande ne relève pas du périmètre du Helpdesk.
+                    </p>
+                    <form method="post" asp-action="HorsPerimetre">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idTicket" value="@Model.IdTicket" />
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Motif *</label>
+                            <textarea name="motifHorsPerimetre" class="form-input" rows="3"
+                                      placeholder="Expliquez pourquoi cette demande est hors périmètre..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn" style="width:100%;background:#6f42c1;color:white;">
+                            🚫 Classer hors périmètre
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        @* Clôture *@
+        @if (estQualifie && !estFerme && Model.Interventions.Any())
+        {
+            <div class="card">
+                <div class="card-header"><h3>🔒 Résoudre le ticket</h3></div>
+                <div class="card-body">
+                    <form method="post" asp-action="Cloturer">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idTicket" value="@Model.IdTicket" />
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Remarque de résolution</label>
+                            <textarea name="remarque" class="form-input" rows="3"
+                                      placeholder="Décrivez la solution apportée..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%;
+                                background:#28a745;">
+                            ✅ Résoudre définitivement
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        @* Annuler *@
+        @if (!estFerme)
+        {
+            <div class="card">
+                <div class="card-header"><h3>❌ Annuler le ticket</h3></div>
+                <div class="card-body">
+                    <form method="post" asp-action="Annuler">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idTicket" value="@Model.IdTicket" />
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Motif d'annulation *</label>
+                            <textarea name="motifAnnulation" class="form-input" rows="3"
+                                      placeholder="Expliquez pourquoi ce ticket est annulé..."
+                                      required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger" style="width:100%;">
+                            Annuler la demande
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        @* Pièces jointes *@
+        @if (Model.PiecesJointes.Any())
+        {
+            <div class="card">
+                <div class="card-header"><h3>📎 Pièces jointes</h3></div>
+                <div class="card-body">
+                    @foreach (var pj in Model.PiecesJointes)
+                    {
+                        <div style="display:flex;align-items:center;gap:8px;
+                                    padding:8px;background:#f8f9fa;border-radius:6px;
+                                    margin-bottom:6px;">
+                            <span>📄</span>
+                            <a href="@pj.CheminFichier" target="_blank"
+                               style="font-size:13px;color:#1a7a5e;">
+                                @pj.NomFichier
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 4px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1.5px solid #ddd;
+        border-radius: 7px;
+        font-size: 13px;
+        outline: none;
+        font-family: inherit;
+    }
+
+        .form-input:focus {
+            border-color: #1a7a5e;
+        }
+
+    textarea.form-input {
+        resize: vertical;
+    }
+</style>

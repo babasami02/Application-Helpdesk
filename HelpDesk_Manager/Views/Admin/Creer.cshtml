@@ -1,0 +1,130 @@
+﻿@model HelpDesk_Manager.Models.Utilisateur
+@{
+    ViewData["Title"] = "Nouvel Utilisateur";
+}
+
+<div class="page-header">
+    <h1>➕ Nouvel Utilisateur</h1>
+    <p>Créer un nouveau compte sur la plateforme</p>
+</div>
+
+<div style="max-width:700px;">
+    <div class="card">
+        <div class="card-header"><h3>Informations du compte</h3></div>
+        <div class="card-body">
+            <form method="post" asp-action="Creer">
+                @Html.AntiForgeryToken()
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <label class="form-label">Prénom *</label>
+                        <input asp-for="Prenom" class="form-input" required />
+                        <span asp-validation-for="Prenom" style="color:#e74c3c;font-size:12px;"></span>
+                    </div>
+                    <div>
+                        <label class="form-label">Nom *</label>
+                        <input asp-for="Nom" class="form-input" required />
+                        <span asp-validation-for="Nom" style="color:#e74c3c;font-size:12px;"></span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label class="form-label">Email *</label>
+                    <input asp-for="Email" type="email" class="form-input" required />
+                    <span asp-validation-for="Email" style="color:#e74c3c;font-size:12px;"></span>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label class="form-label">Mot de passe *</label>
+                    <input type="password" name="motDePasse" class="form-input"
+                           placeholder="Minimum 6 caractères" required />
+                </div>
+
+                <div style="margin-bottom:16px;">
+                    <label class="form-label">Rôle *</label>
+                    <select asp-for="IdRole" asp-items="ViewBag.Roles"
+                            class="form-input" required
+                            onchange="afficherChamps(this.options[this.selectedIndex].text)">
+                        <option value="">-- Sélectionner --</option>
+                    </select>
+                </div>
+
+                @* Champs Employé *@
+                <div id="champsEmploye" style="display:none;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div>
+                            <label class="form-label">Direction</label>
+                            <input asp-for="Direction" class="form-input" />
+                        </div>
+                        <div>
+                            <label class="form-label">Département</label>
+                            <input asp-for="Departement" class="form-input" />
+                        </div>
+                    </div>
+                </div>
+
+                @* Champs Technicien *@
+                <div id="champsTechnicien" style="display:none;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div>
+                            <label class="form-label">Niveau</label>
+                            <select asp-for="Niveau" class="form-input">
+                                <option value="">-- Sélectionner --</option>
+                                <option value="N1">N1</option>
+                                <option value="N2">N2</option>
+                                <option value="N3">N3</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Spécialité</label>
+                            <input asp-for="Specialite" class="form-input" />
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:24px;">
+                    <label class="form-label">Téléphone</label>
+                    <input asp-for="Telephone" class="form-input" placeholder="ex: 0612345678" />
+                </div>
+
+                <div style="display:flex;gap:12px;justify-content:flex-end;">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-primary">✅ Créer le compte</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #444;
+        margin-bottom: 6px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+    }
+
+        .form-input:focus {
+            border-color: #1a7a5e;
+        }
+</style>
+
+<script>
+    function afficherChamps(role) {
+        document.getElementById('champsEmploye').style.display =
+            role === 'Employe' ? 'block' : 'none';
+        document.getElementById('champsTechnicien').style.display =
+            (role === 'Technicien' || role === 'Helpdesk') ? 'block' : 'none';
+    }
+</script>

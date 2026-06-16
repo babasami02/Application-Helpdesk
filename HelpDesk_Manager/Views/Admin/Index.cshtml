@@ -1,0 +1,146 @@
+﻿@model List<HelpDesk_Manager.Models.Utilisateur>
+@{
+    ViewData["Title"] = "Gestion Utilisateurs";
+}
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>Gestion Utilisateurs</h1>
+        <p>@Model.Count utilisateur(s) au total</p>
+    </div>
+    <a href="@Url.Action("Creer")" class="btn btn-primary">➕ Nouvel utilisateur</a>
+</div>
+
+@* Filtres *@
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-body" style="padding:14px 20px;">
+        <form method="get" style="display:flex;gap:12px;align-items:center;">
+            <input type="text" name="recherche" value="@ViewBag.Recherche"
+                   placeholder="🔍 Nom, prénom ou email..."
+                   style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;
+                          font-size:13px;width:250px;outline:none;" />
+
+            <select name="idRole"
+                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;
+                           font-size:13px;outline:none;">
+                <option value="">Tous les rôles</option>
+                @foreach (var r in ViewBag.Roles as SelectList)
+                {
+                    <option value="@r.Value"
+                            selected="@(ViewBag.IdRole?.ToString() == r.Value ? "selected" : null)">
+                        @r.Text
+                    </option>
+                }
+            </select>
+
+            <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
+            @if (ViewBag.Recherche != null || ViewBag.IdRole != null)
+            {
+                <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                    ✕ Réinitialiser
+                </a>
+            }
+        </form>
+    </div>
+</div>
+
+@* Tableau *@
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nom complet</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Département</th>
+                <th>Spécialité</th>
+                <th>Statut</th>
+                <th>Dernière connexion</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="8" style="text-align:center;padding:40px;color:#999;">
+                        Aucun utilisateur trouvé.
+                    </td>
+                </tr>
+            }
+            @foreach (var u in Model)
+            {
+                <tr style="opacity:@(u.IsActive ? "1" : "0.5")">
+                    <td style="font-weight:500;">
+                        <div style="width:32px;height:32px;background:#e8f5f0;border-radius:50%;
+                                    display:inline-flex;align-items:center;justify-content:center;
+                                    font-size:12px;font-weight:700;color:#1a7a5e;
+                                    margin-right:8px;vertical-align:middle;">
+                            @(u.Prenom.Length > 0 ? u.Prenom[0].ToString().ToUpper() : "")@(u.Nom.Length > 0 ? u.Nom[0].ToString().ToUpper() : "")
+                        </div>
+                        @u.NomComplet
+                    </td>
+                    <td style="font-size:13px;color:#666;">@u.Email</td>
+                    <td>
+                        @{
+                            var roleColor = u.Role?.NomRole switch
+                            {
+                                "Administrateur" => "#dc3545",
+                                "Helpdesk" => "#007bff",
+                                "Technicien" => "#fd7e14",
+                                "Employe" => "#28a745",
+                                _ => "#888"
+                            };
+                        }
+                        <span style="background:@roleColor;color:white;padding:2px 10px;
+                                     border-radius:20px;font-size:11px;font-weight:600;">
+                            @u.Role?.NomRole
+                        </span>
+                    </td>
+                    <td style="font-size:13px;color:#888;">
+                        @(u.Departement ?? "—")
+                    </td>
+                    <td style="font-size:13px;color:#888;">
+                        @(u.Specialite ?? "—")
+                    </td>
+                    <td>
+                        @if (u.IsActive)
+                        {
+                            <span style="background:#e8f5e9;color:#2e7d32;padding:2px 10px;
+                                         border-radius:20px;font-size:11px;font-weight:600;">
+                                ✓ Actif
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="background:#f5f5f5;color:#888;padding:2px 10px;
+                                         border-radius:20px;font-size:11px;font-weight:600;">
+                                Inactif
+                            </span>
+                        }
+                    </td>
+                    <td style="font-size:12px;color:#aaa;">
+                        @(u.DernierAcces?.ToString("dd/MM/yyyy HH:mm") ?? "Jamais")
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px;">
+                            <a href="@Url.Action("Modifier", new { id = u.IdUtilisateur })"
+                               class="btn btn-secondary btn-sm">✏️</a>
+                            <form method="post" asp-action="ToggleActif"
+                                  style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@u.IdUtilisateur" />
+                                <button type="submit" class="btn btn-sm"
+                                        style="background:@(u.IsActive ? "#fff3cd" : "#e8f5e9");
+                                               color:@(u.IsActive ? "#856404" : "#2e7d32");
+                                               border:1px solid @(u.IsActive ? "#ffc107" : "#28a745");">
+                                    @(u.IsActive ? "🔒 Désactiver" : "🔓 Activer")
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

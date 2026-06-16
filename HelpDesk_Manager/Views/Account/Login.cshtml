@@ -1,0 +1,174 @@
+@{
+    ViewData["Title"] = "Connexion";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HelpDesk NOVEC — Connexion</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a4f3c 0%, #1a7a5e 50%, #0d6b4f 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .logo-section h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a7a5e;
+            letter-spacing: 2px;
+        }
+
+        .logo-section p {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .badge-helpdesk {
+            display: inline-block;
+            background: #e8f5f0;
+            color: #1a7a5e;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #1a7a5e;
+            box-shadow: 0 0 0 3px rgba(26, 122, 94, 0.1);
+        }
+
+        .btn-connexion {
+            width: 100%;
+            padding: 13px;
+            background: #1a7a5e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-connexion:hover {
+            background: #145f49;
+        }
+
+        .alert-danger {
+            background: #fff0f0;
+            border: 1px solid #ffcdd2;
+            color: #c62828;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 24px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo-section">
+            <h1>NOVEC</h1>
+            <p>Groupe CDG — Ingénieurs Conseils depuis 1958</p>
+            <span class="badge-helpdesk">HELPDESK IT</span>
+        </div>
+
+        @if (ViewBag.Erreur != null)
+        {
+            <div class="alert-danger">
+                ⚠️ @ViewBag.Erreur
+            </div>
+        }
+
+        <form method="post" asp-action="Login" asp-controller="Account">
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <label for="email">Adresse email</label>
+                <input type="email" id="email" name="email"
+                       placeholder="prenom.nom@novec.ma"
+                       required autofocus />
+            </div>
+
+            <div class="form-group">
+                <label for="motDePasse">Mot de passe</label>
+                <input type="password" id="motDePasse" name="motDePasse"
+                       placeholder="••••••••"
+                       required />
+            </div>
+
+            <button type="submit" class="btn-connexion">
+                Se connecter
+            </button>
+        </form>
+
+        <hr class="divider" />
+        <p class="footer-text">
+            Accès réservé aux collaborateurs NOVEC<br/>
+            Pour tout problème de connexion, contactez l'administrateur
+        </p>
+    </div>
+</body>
+</html>

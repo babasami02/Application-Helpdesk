@@ -1,0 +1,52 @@
+﻿@model List<HelpDesk_Manager.Models.Notification>
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="page-header">
+    <h1>🔔 Notifications</h1>
+    <p>Vos @Model.Count dernière(s) notification(s)</p>
+</div>
+
+<div class="card">
+    @if (!Model.Any())
+    {
+        <div style="padding:40px;text-align:center;color:#999;">
+            Aucune notification pour le moment.
+        </div>
+    }
+    else
+    {
+        @foreach (var n in Model)
+        {
+            <div style="display:flex;gap:14px;padding:16px 20px;
+                        border-bottom:1px solid #f0f0f0;
+                        background:@(n.IsLue ? "white" : "#f0faf5");">
+               @* <div style="font-size:22px;flex-shrink:0;">
+                    @(n.Message.StartsWith("📩") ? "📩" :
+                        n.Message.StartsWith("✅") ? "✅" :
+                        n.Message.StartsWith("❌") ? "❌" :
+                        n.Message.StartsWith("🔧") ? "🔧" :
+                        n.Message.StartsWith("🎉") ? "🎉" : "🔔")
+        </div>*@
+                <div style="flex:1;">
+                    <div style="font-size:14px;color:#2d3436;line-height:1.5;">
+                        @n.Message
+                    </div>
+                    <div style="font-size:11px;color:#aaa;margin-top:4px;">
+                        @n.DateEnvoi.ToString("dd/MM/yyyy HH:mm")
+                    </div>
+                </div>
+                @if (n.IdTicket.HasValue)
+                {
+                    <div style="flex-shrink:0;">
+                        <a href="@Url.Action("OuvrirTicket", "Notifications", new { idTicket = n.IdTicket })"
+                           class="btn btn-secondary btn-sm">
+                            Voir →
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

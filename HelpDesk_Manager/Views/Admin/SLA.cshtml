@@ -1,0 +1,77 @@
+@model List<HelpDesk_Manager.Models.ConfigurationSLA>
+@{
+    ViewData["Title"] = "Configuration SLA";
+    var urgences = ViewBag.Urgences as List<HelpDesk_Manager.Models.NiveauUrgence>;
+    var impacts = ViewBag.Impacts as List<HelpDesk_Manager.Models.NiveauImpact>;
+    var domaines = ViewBag.Domaines as List<HelpDesk_Manager.Models.Domaine>;
+}
+
+<div class="page-header">
+    <h1>⚙️ Configuration SLA</h1>
+    <p>Délais de réponse et résolution par Urgence × Impact × Domaine</p>
+</div>
+
+@* Onglets *@
+<div style="display:flex;gap:0;border-bottom:2px solid #e9ecef;margin-bottom:24px;
+            overflow-x:auto;">
+    @foreach (var dom in domaines!)
+    {
+        var isFirst = dom == domaines.First();
+
+        <button class="onglet @(isFirst ? "active" : "")"
+                onclick="afficherOnglet('dom_@dom.IdDomaine', this)">
+            @dom.NomDomaine
+        </button>
+
+    }
+</div>
+
+@* Contenu onglets catégories *@
+@foreach (var dom in domaines!)
+{
+    var isFirst = dom == domaines.First();
+    <div id="onglet_dom_@dom.IdDomaine" class="contenu-onglet" style="display:@(isFirst ? "block" : "none");">
+        @await Html.PartialAsync("_MatriceSLA", new ViewDataDictionary(ViewData)
+{
+    ["SLAs"] = Model.Where(s => s.IdDomaine == dom.IdDomaine).ToList(),
+    ["Urgences"] = urgences,
+    ["Impacts"] = impacts,
+    ["Titre"] = dom.NomDomaine
+})
+    </div>
+}
+
+<style>
+    .onglet {
+        padding: 10px 20px;
+        border: none;
+        background: none;
+        font-size: 13px;
+        font-weight: 500;
+        color: #888;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: 0.15s;
+        white-space: nowrap;
+    }
+
+        .onglet:hover {
+            color: #1a7a5e;
+        }
+
+        .onglet.active {
+            color: #1a7a5e;
+            border-bottom-color: #1a7a5e;
+            font-weight: 700;
+        }
+</style>
+
+<script>
+    function afficherOnglet(id, btn) {
+        document.querySelectorAll('.contenu-onglet').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.onglet').forEach(el => el.classList.remove('active'));
+        document.getElementById('onglet_' + id).style.display = 'block';
+        btn.classList.add('active');
+    }
+</script>

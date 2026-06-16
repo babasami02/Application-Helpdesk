@@ -1,0 +1,254 @@
+@{
+    ViewData["Title"] = "Performance";
+    var enDepassement = ViewBag.EnDepassement as List<HelpDesk_Manager.Models.Ticket> ?? new();
+}
+
+<div class="page-header">
+    <h1>📊 Performance & KPIs</h1>
+    <p>Tableau de bord analytique du Helpdesk</p>
+</div>
+
+@* ── ALERTES SLA ─────────────────────────────────────────────── *@
+@if (enDepassement.Any())
+{
+    <div style="background:#fff5f5;border:1px solid #ffcdd2;border-radius:10px;
+                padding:16px 20px;margin-bottom:24px;">
+        <div style="font-weight:700;color:#c62828;margin-bottom:8px;">
+            ⚠️ @enDepassement.Count ticket(s) en dépassement SLA
+        </div>
+        @foreach (var t in enDepassement)
+        {
+            <div style="font-size:13px;color:#555;margin-bottom:4px;">
+                → <a href="@Url.Action("Details", new { id = t.IdTicket })"
+                     style="color:#c62828;font-weight:600;">
+                    #@t.IdTicket
+                </a>
+                @t.Titre —
+                <span style="color:#e74c3c;">
+                    Délai dépassé depuis
+                    @((int)(DateTime.Now - t.DelaiResolutionCible!.Value).TotalHours)h
+                </span>
+            </div>
+        }
+    </div>
+}
+
+@* ── KPI CARDS ───────────────────────────────────────────────── *@
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:28px;">
+    <div class="card" style="padding:20px;text-align:center;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            Total tickets
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#2d3436;margin:8px 0;">
+            @ViewBag.TotalTickets
+        </div>
+        <div style="font-size:11px;color:#888;">Tous statuts</div>
+    </div>
+    <div class="card" style="padding:20px;text-align:center;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            MTTR
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#007bff;margin:8px 0;">
+            @ViewBag.MTTR<span style="font-size:16px;">h</span>
+        </div>
+        <div style="font-size:11px;color:#888;">Temps moyen résolution</div>
+    </div>
+    <div class="card" style="padding:20px;text-align:center;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            CSAT
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#f39c12;margin:8px 0;">
+            @ViewBag.CSAT<span style="font-size:16px;">/5</span>
+        </div>
+        <div style="font-size:11px;color:#888;">Satisfaction moyenne</div>
+    </div>
+    <div class="card" style="padding:20px;text-align:center;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            SLA
+        </div>
+        <div style="font-size:36px;font-weight:700;
+                    color:@(ViewBag.SLARespece >= 80 ? "#28a745" : "#e74c3c");margin:8px 0;">
+            @ViewBag.SLARespece<span style="font-size:16px;">%</span>
+        </div>
+        <div style="font-size:11px;color:#888;">Délais respectés</div>
+    </div>
+    <div class="card" style="padding:20px;text-align:center;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            CFR
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#1a7a5e;margin:8px 0;">
+            @ViewBag.CFR<span style="font-size:16px;">%</span>
+        </div>
+        <div style="font-size:11px;color:#888;">Résolution 1er contact</div>
+    </div>
+</div>
+
+@* ── GRAPHIQUES ──────────────────────────────────────────────── *@
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+    @* Camembert statuts *@
+    <div class="card">
+        <div class="card-header"><h3>Répartition par statut</h3></div>
+        <div class="card-body" style="display:flex;justify-content:center;">
+            <canvas id="chartStatut" width="300" height="300"></canvas>
+        </div>
+    </div>
+
+    @* Barres catégories *@
+    <div class="card">
+        <div class="card-header"><h3>Tickets par domaine</h3></div>
+        <div class="card-body">
+            <canvas id="chartDomaine" width="400" height="300"></canvas>
+        </div>
+    </div>
+</div>
+
+@* Barres priorités *@
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-header"><h3>Tickets par priorité</h3></div>
+    <div class="card-body">
+        <canvas id="chartPriorite" height="120"></canvas>
+    </div>
+</div>
+
+@* ── CLASSEMENT TECHNICIENS ───────────────────────────────────── *@
+<div class="card">
+    <div class="card-header"><h3>🏆 Classement techniciens</h3></div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Technicien</th>
+                <th>Spécialité</th>
+                <th>Total interventions</th>
+                <th>Terminées</th>
+                <th>Note moyenne</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                var classement = ViewBag.ClassementTech as dynamic;
+                int rang = 1;
+            }
+            @foreach (var t in ViewBag.ClassementTech)
+            {
+                <tr>
+                    <td>
+                        <span style="font-weight:700;color:@(rang == 1 ? "#f39c12" : rang == 2 ? "#888" : rang == 3 ? "#cd7f32" : "#444");">
+                            @(rang == 1 ? "🥇" : rang == 2 ? "🥈" : rang == 3 ? "🥉" : rang.ToString())
+                        </span>
+                    </td>
+                    <td style="font-weight:500;">@t.Nom</td>
+                    <td style="font-size:13px;color:#888;">@t.Specialite</td>
+                    <td style="text-align:center;">@t.TotalInterventions</td>
+                    <td style="text-align:center;">
+                        <span style="background:#e8f5e9;color:#2e7d32;padding:2px 10px;
+                                     border-radius:20px;font-size:12px;font-weight:600;">
+                            @t.Terminees
+                        </span>
+                    </td>
+                    <td>
+                        @if (t.NoteMoyenne > 0)
+                        {
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <span style="color:@(i <= Math.Round((double)t.NoteMoyenne) ? "#f39c12" : "#ddd");">★</span>
+                            }
+                            <span style="font-size:12px;color:#888;margin-left:4px;">
+                                (@Math.Round((double)t.NoteMoyenne, 1))
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="color:#ccc;">—</span>
+                        }
+                    </td>
+                </tr>
+                rang++;
+            }
+        </tbody>
+    </table>
+</div>
+
+@* ── SCRIPTS GRAPHIQUES ───────────────────────────────────────── *@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Données depuis le serveur
+    const dataStatut = {
+        labels: [@Html.Raw(string.Join(",", ((IEnumerable<dynamic>)ViewBag.ParStatut).Select(s => $"'{s.Statut}'")))],
+        data: [@Html.Raw(string.Join(",", ((IEnumerable<dynamic>)ViewBag.ParStatut).Select(s => s.Count)))]
+    };
+    const dataDomaine = {
+        labels: [@Html.Raw(string.Join(",", ((IEnumerable<dynamic>)ViewBag.ParDomaine).Select(s => $"'{s.Domaine}'")))],
+        data: [@Html.Raw(string.Join(",", ((IEnumerable<dynamic>)ViewBag.ParDomaine).Select(s => s.Count)))]
+    };
+    const dataPriorite = {
+        labels: [@Html.Raw(string.Join(",", ((IEnumerable<dynamic>)ViewBag.ParPriorite).Select(s => $"'{s.Priorite}'")))],
+        data: [@Html.Raw(string.Join(",", ((IEnumerable<dynamic>)ViewBag.ParPriorite).Select(s => s.Count)))]
+    };
+
+    // Couleurs
+    const couleursStatut = ['#17a2b8', '#6f42c1', '#007bff', '#dc3545', '#28a745', '#6c757d'];
+    const couleursPriorite = { 'P1': '#dc3545', 'P2': '#fd7e14', 'P3': '#ffc107', 'P4': '#28a745', 'Non qualifié': '#aaa' };
+
+    // Camembert statuts
+    new Chart(document.getElementById('chartStatut'), {
+        type: 'doughnut',
+        data: {
+            labels: dataStatut.labels,
+            datasets: [{
+                data: dataStatut.data,
+                backgroundColor: couleursStatut,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // Barres domaines
+    new Chart(document.getElementById('chartDomaine'), {
+        type: 'bar',
+        data: {
+            labels: dataDomaine.labels,
+            datasets: [{
+                label: 'Tickets',
+                data: dataDomaine.data,
+                backgroundColor: '#1a7a5e',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+
+    // Barres priorités
+    new Chart(document.getElementById('chartPriorite'), {
+        type: 'bar',
+        data: {
+            labels: dataPriorite.labels,
+            datasets: [{
+                label: 'Tickets',
+                data: dataPriorite.data,
+                backgroundColor: dataPriorite.labels.map(l => couleursPriorite[l] || '#aaa'),
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+</script>

@@ -1,0 +1,143 @@
+@model List<HelpDesk_Manager.Models.Ticket>
+@{
+    ViewData["Title"] = "Mes Tickets";
+}
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>Mes Tickets</h1>
+        <p>Suivez l'évolution de vos demandes</p>
+    </div>
+    <a href="@Url.Action("Creer")" class="btn btn-primary">✏️ Nouveau ticket</a>
+</div>
+
+@* Barre de recherche *@
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-body" style="padding:14px 20px;">
+        <form method="get" style="display:flex;gap:12px;align-items:center;">
+            <input type="text" name="recherche" value="@ViewBag.Recherche"
+                   placeholder="🔍 Rechercher par N° ou mot-clé..."
+                   class="form-input" style="max-width:300px;" />
+            <select name="statut" class="form-input" style="max-width:180px;">
+                <option value="">Tous les statuts</option>
+                @foreach (var s in ViewBag.Statuts as List<HelpDesk_Manager.Models.StatutTicket>)
+                {
+                        <option value="@s.NomStatut"
+                                selected="@(ViewBag.Statut == s.NomStatut ? "selected" : null)">
+                        @s.NomStatut
+                        </option>
+                }
+            </select>
+            <button type="submit" class="btn btn-secondary">Filtrer</button>
+            @if (ViewBag.Recherche != null || ViewBag.Statut != null)
+            {
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">✕ Réinitialiser</a>
+            }
+        </form>
+    </div>
+</div>
+
+@* Tableau *@
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>N° Ticket</th>
+                <th>Sujet</th>
+                <th>Domaine</th>
+                <th>Statut</th>
+                <th>Date</th>
+                <th>Note</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:40px;color:#999;">
+                            Aucun ticket trouvé.
+                            <a href="@Url.Action("Creer")">Créer votre premier ticket →</a>
+                        </td>
+                    </tr>
+            }
+            @foreach (var t in Model)
+            {
+                    <tr>
+                    <td>
+                        <span style="color:#1a7a5e;font-weight:700;">@t.NumeroAnnuel/@t.DateOuverture.Year</span>
+                    </td>
+                        <td>@t.Titre</td>
+                        <td style="color:#888;font-size:13px;">@(t.Domaine?.NomDomaine ?? "—")</td>
+                        <td>
+                        @{
+                            var cssClass = t.Statut?.NomStatut switch
+                            {
+                                "Nouveau" => "badge-nouveau",
+                                "Hors périmètre" => "badge-hors-perimetre",
+                                "En cours" => "badge-en-cours",
+                                "Annulé" => "badge-annule",
+                                "Résolu" => "badge-resolu",
+                                "Fermé" => "badge-ferme",
+                                _ => ""
+                            };
+                        }
+                            <span class="badge @cssClass">@t.Statut?.NomStatut</span>
+                        </td>
+                        <td style="font-size:13px;color:#888;">
+                        @t.DateOuverture.ToString("dd/MM/yyyy")
+                        </td>
+                    <td>
+                        @if (t.NoteEmployee.HasValue)
+                        {
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <span style="color:@(i <= t.NoteEmployee ? "#f39c12" : "#ddd");">★</span>
+                            }
+                        }
+                        else if (t.Statut?.NomStatut == "Résolu")
+                        {
+                            <a href="@Url.Action("Noter", new { id = t.IdTicket })"
+                               class="btn btn-primary btn-sm">
+                                Noter
+                            </a>
+                        }
+                        else
+                        {
+                            <span style="color:#ccc;">—</span>
+                        }
+                    </td>
+                        <td>
+                            <a href="@Url.Action("Details", new { id = t.IdTicket })"
+                               class="btn btn-secondary btn-sm">Voir</a>
+                        </td>
+                    </tr>
+            }
+        </tbody>
+    </table>
+    @await Html.PartialAsync("_Pagination", new ViewDataDictionary(ViewData)
+{
+    ["PageActuelle"] = ViewBag.PageActuelle,
+    ["TotalPages"] = ViewBag.TotalPages,
+    ["TotalItems"] = ViewBag.TotalItems,
+    ["PageSize"] = ViewBag.PageSize,
+    ["Action"] = "Index",
+    ["Controller"] = "Tickets",
+    ["RouteValues"] = new Dictionary<string, string>
+    {
+        ["recherche"] = ViewBag.Recherche ?? "",
+        ["statut"] = ViewBag.Statut ?? ""
+    }
+})
+</div>
+
+<style>
+    .form-input {
+        padding: 8px 12px;
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        font-size: 13px;
+        outline: none;
+    }
+    .form-input:focus { border-color: #1a7a5e; }
+</style>

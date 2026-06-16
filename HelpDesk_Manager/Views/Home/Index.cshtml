@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="page-header">
+    <h1>Bienvenue sur le HelpDesk NOVEC</h1>
+    <p>Vue d'ensemble de l'activité en temps réel</p>
+</div>
+
+<!-- KPI Cards -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+    <div class="card" style="padding:20px;">
+        <div style="font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Total tickets</div>
+        <div style="font-size:36px;font-weight:700;color:#2d3436;margin:8px 0;">@ViewBag.TotalTickets</div>
+        <div style="font-size:12px;color:#2dce89;">↑ Tous statuts confondus</div>
+    </div>
+    <div class="card" style="padding:20px;">
+        <div style="font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Nouveaux</div>
+        <div style="font-size:36px;font-weight:700;color:#17a2b8;margin:8px 0;">@ViewBag.NouveauxTickets</div>
+        <div style="font-size:12px;color:#888;">En attente de qualification</div>
+    </div>
+    <div class="card" style="padding:20px;">
+        <div style="font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">En cours</div>
+        <div style="font-size:36px;font-weight:700;color:#007bff;margin:8px 0;">@ViewBag.EnCours</div>
+        <div style="font-size:12px;color:#888;">En traitement actif</div>
+    </div>
+    <div class="card" style="padding:20px;">
+        <div style="font-size:12px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Résolus</div>
+        <div style="font-size:36px;font-weight:700;color:#28a745;margin:8px 0;">@ViewBag.Resolus</div>
+        <div style="font-size:12px;color:#28a745;">✓ Clôturés avec succès</div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="card">
+    <div class="card-header">
+        <h3>Actions rapides</h3>
+    </div>
+    <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;">
+        @if (User.IsInRole("Employe"))
+        {
+            <a href="@Url.Action("Creer","Tickets")" class="btn btn-primary">✏️ Créer un ticket</a>
+            <a href="@Url.Action("Index","Tickets")" class="btn btn-secondary">🎫 Mes tickets</a>
+        }
+        @if (User.IsInRole("Helpdesk") || User.IsInRole("Administrateur"))
+        {
+            <a href="@Url.Action("Index","Helpdesk")" class="btn btn-primary">📋 Consulter les tickets</a>
+            <a href="@Url.Action("Performance","Helpdesk")" class="btn btn-secondary">📊 Performance</a>
+        }
+        @if (User.IsInRole("Technicien"))
+        {
+            <a href="@Url.Action("MesTickets","Technicien")" class="btn btn-primary">🔧 Mes interventions</a>
+        }
+    </div>
+</div>
