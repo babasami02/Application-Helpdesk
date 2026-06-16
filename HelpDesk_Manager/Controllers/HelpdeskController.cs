@@ -230,7 +230,8 @@ namespace HelpDesk_Manager.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AjouterIntervention(int idTicket, int idTechnicien,
-                                                              string? descriptionAction)
+                                                              string? descriptionAction,
+                                                      DateTime? datePlanifiee)
         {
             var idUser = int.Parse(User.FindFirst("IdUtilisateur")!.Value);
             var statut = await _db.StatutsIntervention.FirstAsync(s => s.NomStatut == "Planifiée");
@@ -247,7 +248,8 @@ namespace HelpDesk_Manager.Controllers
                 IdTechnicien = idTechnicien,
                 DescriptionAction = descriptionAction,
                 IdStatut = statut.IdStatut,
-                DateAction = DateTime.Now
+                DateAction = DateTime.Now,
+                DatePlanifiee = datePlanifiee ?? DateTime.Now
             };
 
             var dernierNumero = await _db.Interventions

@@ -47,6 +47,7 @@
                 <th>Priorité</th>
                 <th>Statut intervention</th>
                 <th>Date assignation</th>
+                <th>Date planifiée</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -124,6 +125,9 @@
                     </td>
                     <td style="font-size:12px;color:#888;">
                         @i.DateAction.ToString("dd/MM/yyyy")
+                    </td>
+                    <td style="font-size:12px;color:#888;">
+                        @(i.DatePlanifiee.HasValue ? i.DatePlanifiee.Value.ToString("dd/MM/yyyy HH:mm") : "—")
                     </td>
                     <td>
                         <a href="@Url.Action("Details", new { id = i.IdIntervention })"

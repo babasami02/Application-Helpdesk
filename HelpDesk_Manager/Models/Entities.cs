@@ -187,6 +187,8 @@ namespace HelpDesk_Manager.Models
         public DateTime? DateDebut { get; set; }
         public DateTime? DateFin { get; set; }
         public int NumeroIntervention { get; set; } = 0;
+        public DateTime? DatePlanifiee { get; set; }
+        [MaxLength(500)] public string? MotifStatut { get; set; }
     }
 
     // ── HISTORIQUE ───────────────────────────────────────────────

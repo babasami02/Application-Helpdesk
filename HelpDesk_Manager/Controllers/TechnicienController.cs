@@ -89,7 +89,7 @@ namespace HelpDesk_Manager.Controllers
         // ── Mettre à jour statut intervention POST ───────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MettreAJourStatut(int idIntervention, int idStatut)
+        public async Task<IActionResult> MettreAJourStatut(int idIntervention, int idStatut, string? motifStatut)
         {
             var idUser = int.Parse(User.FindFirst("IdUtilisateur")!.Value);
 
@@ -99,9 +99,38 @@ namespace HelpDesk_Manager.Controllers
                                        && i.IdTechnicien == idUser);
 
             if (intervention == null) return NotFound();
-
             var ancienStatut = intervention.Statut?.NomStatut;
             var nouveauStatut = await _db.StatutsIntervention.FindAsync(idStatut);
+            var nomNouveauStatut = nouveauStatut?.NomStatut;
+
+            // Validation transitions
+            var transitionsAutorisees = new Dictionary<string, List<string>>
+            {
+                ["Planifiée"] = new() { "En cours", "Terminée", "Annulée" },
+                ["En cours"] = new() { "Terminée", "Annulée", "En attente demandeur", "En attente tiers/fournisseur" },
+                ["En attente demandeur"] = new() { "En cours", "Terminée" },
+                ["En attente tiers/fournisseur"] = new() { "En cours", "Terminée" },
+            };
+
+            if (ancienStatut != null && transitionsAutorisees.ContainsKey(ancienStatut))
+            {
+                if (!transitionsAutorisees[ancienStatut].Contains(nomNouveauStatut ?? ""))
+                {
+                    TempData["Erreur"] = $"Transition de '{ancienStatut}' vers '{nomNouveauStatut}' non autorisée.";
+                    return RedirectToAction("Details", new { id = idIntervention });
+                }
+            }
+
+            // Motif obligatoire pour certains statuts
+            var statutsAvecMotif = new[] { "Annulée", "En attente demandeur", "En attente tiers/fournisseur" };
+            if (statutsAvecMotif.Contains(nomNouveauStatut) && string.IsNullOrWhiteSpace(motifStatut))
+            {
+                TempData["Erreur"] = "Un motif est obligatoire pour ce statut.";
+                return RedirectToAction("Details", new { id = idIntervention });
+            }
+
+            intervention.MotifStatut = statutsAvecMotif.Contains(nomNouveauStatut) ? motifStatut : null;
+
 
             intervention.IdStatut = idStatut;
 

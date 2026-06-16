@@ -85,6 +85,12 @@
                             }
                         </div>
                     </div>
+                    @if (Model.DatePlanifiee.HasValue)
+                    {
+                        <div style="margin-top:12px;font-size:12px;color:#888;">
+                            📅 Planifiée pour le @Model.DatePlanifiee.Value.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                    }
                     <div>
                         <div style="font-size:11px;color:#888;font-weight:600;
                                     text-transform:uppercase;margin-bottom:4px;">
@@ -240,30 +246,71 @@
     <div style="display:flex;flex-direction:column;gap:20px;">
 
         @* Mettre à jour statut *@
-        @if (!estTerminee)
+        <!-- APRÈS -->
+        @{
+            var statutActuel = Model.Statut?.NomStatut;
+            var transitionsDisponibles = new Dictionary<string, List<(string Nom, string Couleur, string Bg, string Emoji)>>
+            {
+                ["Planifiée"] = new()
+        {
+        ("En cours",  "#1565c0", "#dbeafe", "▶️"),
+        ("Terminée",  "#1b5e20", "#c8e6c9", "✅"),
+        ("Annulée",   "#b71c1c", "#ffcdd2", "❌"),
+        },
+                ["En cours"] = new()
+        {
+        ("Terminée",                     "#1b5e20", "#c8e6c9", "✅"),
+        ("Annulée",                      "#b71c1c", "#ffcdd2", "❌"),
+        ("En attente demandeur",         "#4a148c", "#e1bee7", "⏳"),
+        ("En attente tiers/fournisseur", "#0d47a1", "#bbdefb", "🔗"),
+        },
+                ["En attente demandeur"] = new()
+        {
+        ("En cours",  "#1565c0", "#dbeafe", "▶️"),
+        ("Terminée",  "#1b5e20", "#c8e6c9", "✅"),
+        },
+                ["En attente tiers/fournisseur"] = new()
+        {
+        ("En cours",  "#1565c0", "#dbeafe", "▶️"),
+        ("Terminée",  "#1b5e20", "#c8e6c9", "✅"),
+        },
+        };
+
+            var statutsAvecMotif = new[] { "Annulée", "En attente demandeur", "En attente tiers/fournisseur" };
+        }
+
+        @if (statutActuel != null && transitionsDisponibles.ContainsKey(statutActuel))
         {
             <div class="card">
-                <div class="card-header"><h3>🔄 Mettre à jour le statut</h3></div>
-                <div class="card-body">
-                    <form method="post" asp-action="MettreAJourStatut">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="idIntervention" value="@Model.IdIntervention" />
-                        <div style="margin-bottom:12px;">
-                            <label class="form-label">Nouveau statut</label>
-                            <select name="idStatut" class="form-input" required>
-                                @foreach (var s in ViewBag.Statuts as List<HelpDesk_Manager.Models.StatutIntervention>)
+                <div class="card-header"><h3>🔄 Changer le statut</h3></div>
+                <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+                    @foreach (var transition in transitionsDisponibles[statutActuel])
+                    {
+                        var avecMotif = statutsAvecMotif.Contains(transition.Nom);
+                        <div style="border:1px solid #eee;border-radius:8px;overflow:hidden;">
+                            <form method="post" asp-action="MettreAJourStatut">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idIntervention" value="@Model.IdIntervention" />
+                                <input type="hidden" name="idStatut"
+                                       value="@((ViewBag.Statuts as List<HelpDesk_Manager.Models.StatutIntervention>)
+                                         ?.FirstOrDefault(s => s.NomStatut == transition.Nom)?.IdStatut)" />
+                                <button type="submit"
+                                        style="width:100%;padding:10px 14px;border:none;cursor:pointer;
+                                       background:@transition.Bg;color:@transition.Couleur;
+                                       font-weight:600;font-size:13px;text-align:left;">
+                                    @transition.Emoji @transition.Nom
+                                </button>
+                                @if (avecMotif)
                                 {
-                                    <option value="@s.IdStatut"
-                                            selected="@(s.IdStatut == Model.IdStatut)">
-                                        @s.NomStatut
-                                    </option>
+                                    <div style="padding:10px;background:#fafafa;border-top:1px solid #eee;">
+                                        <textarea name="motifStatut" class="form-input" rows="2"
+                                                  placeholder="Motif obligatoire...*"
+                                                  required></textarea>
+                                    </div>
                                 }
-                            </select>
+                            </form>
                         </div>
-                        <button type="submit" class="btn btn-primary" style="width:100%;">
-                            Mettre à jour
-                        </button>
-                    </form>
+                    }
                 </div>
             </div>
         }

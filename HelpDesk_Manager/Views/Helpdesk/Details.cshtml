@@ -163,6 +163,11 @@
                                 <input type="text" name="descriptionAction" class="form-input"
                                        placeholder="Ex: Diagnostic réseau, Installation... " />
                             </div>
+                            <div>
+                                <label class="form-label">Date planifiée</label>
+                                <input type="datetime-local" name="datePlanifiee" class="form-input"
+                                       value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm">
                             Assigner l'intervention
