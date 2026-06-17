@@ -60,6 +60,31 @@ namespace HelpDesk_Manager.Models
         // TODO (futur) : ICollection<Categorie> Categories { get; set; }
     }
 
+    //------------ Categorie -----------------------
+    public class Categorie
+    {
+        [Key] public int IdCategorie { get; set; }
+        [Required, MaxLength(100)] public string NomCategorie { get; set; } = "";
+
+        public int IdDomaine { get; set; }
+        [ForeignKey(nameof(IdDomaine))] public Domaine? Domaine { get; set; }
+
+        public ICollection<SousCategorie> SousCategories { get; set; } = new List<SousCategorie>();
+        public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+    }
+
+    //------ Sous-Categorie -------------------------------
+    public class SousCategorie
+    {
+        [Key] public int IdSousCategorie { get; set; }
+        [Required, MaxLength(100)] public string NomSousCategorie { get; set; } = "";
+
+        public int IdCategorie { get; set; }
+        [ForeignKey(nameof(IdCategorie))] public Categorie? Categorie { get; set; }
+
+        public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+    }
+
     // ── NATURE ───────────────────────────────────────────────────
     public class Nature
     {
@@ -134,6 +159,12 @@ namespace HelpDesk_Manager.Models
 
         public int? IdImpact { get; set; }
         [ForeignKey(nameof(IdImpact))] public NiveauImpact? Impact { get; set; }
+
+        public int? IdCategorie { get; set; }
+        [ForeignKey(nameof(IdCategorie))] public Categorie? Categorie { get; set; }
+
+        public int? IdSousCategorie { get; set; }
+        [ForeignKey(nameof(IdSousCategorie))] public SousCategorie? SousCategorie { get; set; }
 
         [MaxLength(5)]   public string? PrioriteCalculee { get; set; }
         [MaxLength(500)] public string? MotifRejet { get; set; }

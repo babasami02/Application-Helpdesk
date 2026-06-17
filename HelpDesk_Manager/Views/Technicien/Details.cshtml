@@ -1,4 +1,4 @@
-﻿@model HelpDesk_Manager.Models.Intervention
+@model HelpDesk_Manager.Models.Intervention
 @{
     ViewData["Title"] = $"Intervention #{Model.NumeroIntervention}";
     var estTerminee = Model.Statut?.NomStatut == "Terminée" ||
@@ -57,6 +57,27 @@
                             Demandeur
                         </div>
                         <div>@Model.Ticket?.Demandeur?.NomComplet</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                                    text-transform:uppercase;margin-bottom:4px;">
+                            Domaine
+                        </div>
+                        <div>@(Model.Ticket?.Domaine?.NomDomaine ?? "—")</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                                    text-transform:uppercase;margin-bottom:4px;">
+                            Catégorie
+                        </div>
+                        <div>@(Model.Ticket?.Categorie?.NomCategorie ?? "—")</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                                    text-transform:uppercase;margin-bottom:4px;">
+                            Sous-Catégorie
+                        </div>
+                        <div>@(Model.Ticket?.SousCategorie?.NomSousCategorie ?? "—")</div>
                     </div>
                     <div>
                         <div style="font-size:11px;color:#888;font-weight:600;

@@ -50,7 +50,7 @@
                     </div>
                     <div style="color:#444;line-height:1.6;white-space:pre-wrap;">@Model.Description</div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px;">
                     <div>
                         <div style="font-size:11px;color:#888;font-weight:600;
                                     text-transform:uppercase;">
@@ -67,6 +67,24 @@
                         </div>
                         <div style="font-size:13px;margin-top:2px;">
                             @(Model.Nature?.NomNature ?? "—")
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                                    text-transform:uppercase;">
+                            Catégorie
+                        </div>
+                        <div style="font-size:13px;margin-top:2px;">
+                            @(Model.Categorie?.NomCategorie ?? "—")
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;
+                                    text-transform:uppercase;">
+                            Sous-catégorie
+                        </div>
+                        <div style="font-size:13px;margin-top:2px;">
+                            @(Model.SousCategorie?.NomSousCategorie ?? "—")
                         </div>
                     </div>
                     <div>

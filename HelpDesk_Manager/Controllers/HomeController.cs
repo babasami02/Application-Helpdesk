@@ -45,6 +45,46 @@ namespace HelpDesk_Manager.Controllers
 
                 return View("IndexEmploye");
             }
+            // Dashboard Technicien
+            if (User.IsInRole("Technicien"))
+            {
+                var idUser = int.Parse(User.FindFirst("IdUtilisateur")!.Value);
+
+                var mesInterventions = await _db.Interventions
+                    .Include(i => i.Statut)
+                    .Include(i => i.Ticket)
+                        .ThenInclude(t => t!.Statut)
+                    .Include(i => i.Ticket)
+                        .ThenInclude(t => t!.Domaine)
+                    .Include(i => i.Ticket)
+                        .ThenInclude(t => t!.Demandeur)
+                    .Where(i => i.IdTechnicien == idUser)
+                    .OrderByDescending(i => i.DateAction)
+                    .ToListAsync();
+
+                ViewBag.Total = mesInterventions.Count;
+                ViewBag.Planifiees = mesInterventions.Count(i => i.Statut?.NomStatut == "Planifiée");
+                ViewBag.EnCours = mesInterventions.Count(i => i.Statut?.NomStatut == "En cours");
+                ViewBag.Terminees = mesInterventions.Count(i => i.Statut?.NomStatut == "Terminée");
+                ViewBag.EnAttente = mesInterventions.Count(i => i.Statut?.NomStatut == "En attente demandeur"
+                                                              || i.Statut?.NomStatut == "En attente tiers/fournisseur");
+
+                // Interventions planifiées pour aujourd'hui
+                ViewBag.AujourdHui = mesInterventions
+                    .Where(i => i.DatePlanifiee.HasValue
+                             && i.DatePlanifiee.Value.Date == DateTime.Today
+                             && i.Statut?.NomStatut == "Planifiée")
+                    .ToList();
+
+                ViewBag.Recentes = mesInterventions.Take(5).ToList();
+
+                ViewBag.ParStatut = mesInterventions
+                    .GroupBy(i => i.Statut?.NomStatut ?? "Inconnu")
+                    .Select(g => new { Statut = g.Key, Count = g.Count() })
+                    .ToList();
+
+                return View("IndexTechnicien");
+            }
 
             // Dashboard Admin / Helpdesk / Technicien
             ViewBag.TotalTickets = await _db.Tickets.CountAsync();

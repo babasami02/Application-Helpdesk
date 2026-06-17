@@ -1,0 +1,225 @@
+﻿@{
+    ViewData["Title"] = "Mon Dashboard";
+}
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+        <h1>Bonjour, @User.FindFirst("NomComplet")?.Value</h1>
+        <p>Voici un résumé de vos interventions</p>
+    </div>
+    <a href="@Url.Action("MesTickets","Technicien")" class="btn btn-primary">
+        🔧 Mes interventions
+    </a>
+</div>
+
+@* Alerte interventions du jour *@
+@if ((ViewBag.AujourdHui as List<HelpDesk_Manager.Models.Intervention>)!.Any())
+{
+    <div style="background:#e8f5f0;border:1px solid #1a7a5e;border-radius:10px;
+                padding:14px 20px;margin-bottom:24px;display:flex;
+                align-items:center;justify-content:space-between;">
+        <div>
+            <span style="font-weight:600;color:#1a7a5e;">
+                📅 @((ViewBag.AujourdHui as List<HelpDesk_Manager.Models.Intervention>)!.Count) intervention(s) planifiée(s) pour aujourd'hui
+            </span>
+            <span style="font-size:13px;color:#888;margin-left:8px;">
+                N'oubliez pas de les démarrer
+            </span>
+        </div>
+        <a href="@Url.Action("MesTickets","Technicien")" class="btn btn-sm"
+           style="background:#1a7a5e;color:white;font-weight:600;">
+            Voir →
+        </a>
+    </div>
+}
+
+@* KPI Cards *@
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:28px;">
+    <div class="card" style="padding:20px;text-align:center;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            Total
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#2d3436;margin:8px 0;">
+            @ViewBag.Total
+        </div>
+        <div style="font-size:12px;color:#888;">Interventions</div>
+    </div>
+    <div class="card" style="padding:20px;text-align:center;border-top:3px solid #1565c0;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            Planifiées
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#1565c0;margin:8px 0;">
+            @ViewBag.Planifiees
+        </div>
+        <div style="font-size:12px;color:#888;">À démarrer</div>
+    </div>
+    <div class="card" style="padding:20px;text-align:center;border-top:3px solid #f57f17;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            En cours
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#f57f17;margin:8px 0;">
+            @ViewBag.EnCours
+        </div>
+        <div style="font-size:12px;color:#888;">En traitement</div>
+    </div>
+    <div class="card" style="padding:20px;text-align:center;border-top:3px solid #1b5e20;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            Terminées
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#1b5e20;margin:8px 0;">
+            @ViewBag.Terminees
+        </div>
+        <div style="font-size:12px;color:#1b5e20;">✓ Complétées</div>
+    </div>
+    <div class="card" style="padding:20px;text-align:center;border-top:3px solid #4a148c;">
+        <div style="font-size:11px;color:#888;font-weight:600;
+                    text-transform:uppercase;letter-spacing:0.5px;">
+            En attente
+        </div>
+        <div style="font-size:36px;font-weight:700;color:#4a148c;margin:8px 0;">
+            @ViewBag.EnAttente
+        </div>
+        <div style="font-size:12px;color:#888;">Demandeur / Tiers</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+
+    @* Interventions récentes *@
+    <div class="card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>🕐 Mes interventions récentes</h3>
+            <a href="@Url.Action("MesTickets","Technicien")"
+               style="font-size:13px;color:#1a7a5e;">Voir tout →</a>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Ticket</th>
+                    <th>Mission</th>
+                    <th>Priorité</th>
+                    <th>Statut</th>
+                    <th>Planifiée</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!(ViewBag.Recentes as List<HelpDesk_Manager.Models.Intervention>)!.Any())
+                {
+                    <tr>
+                        <td colspan="6" style="text-align:center;padding:30px;color:#999;">
+                            Aucune intervention assignée pour le moment.
+                        </td>
+                    </tr>
+                }
+                @foreach (var i in ViewBag.Recentes as List<HelpDesk_Manager.Models.Intervention>)
+                {
+                    <tr>
+                        <td style="color:#1a7a5e;font-weight:700;">
+                            @i.Ticket?.NumeroAnnuel/@i.Ticket?.DateOuverture.Year - @i.NumeroIntervention
+                        </td>
+                        <td style="font-weight:500;max-width:160px;">@i.Ticket?.Titre</td>
+                        <td style="font-size:12px;color:#555;max-width:160px;">@i.DescriptionAction</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(i.Ticket?.PrioriteCalculee))
+                            {
+                                var c = i.Ticket.PrioriteCalculee switch
+                                {
+                                    "P1" => "#dc3545",
+                                    "P2" => "#fd7e14",
+                                    "P3" => "#ffc107",
+                                    "P4" => "#28a745",
+                                    _ => "#888"
+                                };
+                                <span style="background:@c;color:white;padding:2px 8px;
+                                             border-radius:20px;font-size:11px;font-weight:700;">
+                                    @i.Ticket.PrioriteCalculee
+                                </span>
+                            }
+                            else
+                            {
+                                <span style="color:#ccc;">—</span>
+                            }
+                        </td>
+                        <td>
+                            @{
+                                var bg = i.Statut?.NomStatut switch
+                                {
+                                    "Planifiée" => "#dbeafe",
+                                    "En cours" => "#fff8e1",
+                                    "Terminée" => "#c8e6c9",
+                                    "Annulée" => "#ffcdd2",
+                                    "En attente demandeur" => "#e1bee7",
+                                    "En attente tiers/fournisseur" => "#bbdefb",
+                                    _ => "#f5f5f5"
+                                };
+                                var fg = i.Statut?.NomStatut switch
+                                {
+                                    "Planifiée" => "#1565c0",
+                                    "En cours" => "#f57f17",
+                                    "Terminée" => "#1b5e20",
+                                    "Annulée" => "#b71c1c",
+                                    "En attente demandeur" => "#4a148c",
+                                    "En attente tiers/fournisseur" => "#0d47a1",
+                                    _ => "#616161"
+                                };
+                            }
+                            <span style="background:@bg;color:@fg;padding:3px 8px;
+                                         border-radius:20px;font-size:11px;font-weight:600;">
+                                @i.Statut?.NomStatut
+                            </span>
+                        </td>
+                        <td style="font-size:12px;color:#888;">
+                            @(i.DatePlanifiee.HasValue ? i.DatePlanifiee.Value.ToString("dd/MM/yyyy") : "—")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* Graphique *@
+    <div class="card">
+        <div class="card-header"><h3>📊 Répartition par statut</h3></div>
+        <div class="card-body" style="display:flex;justify-content:center;align-items:center;">
+            @if (ViewBag.Total > 0)
+            {
+                <canvas id="chartStatut" width="280" height="280"></canvas>
+            }
+            else
+            {
+                <div style="text-align:center;color:#999;padding:40px;">
+                    <div style="font-size:40px;margin-bottom:8px;">📭</div>
+                    <div>Aucune intervention pour le moment</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.Total > 0)
+{
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        new Chart(document.getElementById('chartStatut'), {
+            type: 'doughnut',
+            data: {
+                labels: [@Html.Raw(string.Join(",", ((IEnumerable<dynamic>)ViewBag.ParStatut).Select(s => $"'{s.Statut}'")))],
+                datasets: [{
+                    data: [@Html.Raw(string.Join(",", ((IEnumerable<dynamic>)ViewBag.ParStatut).Select(s => s.Count)))],
+                    backgroundColor: ['#dbeafe', '#fff8e1', '#c8e6c9', '#ffcdd2', '#e1bee7', '#bbdefb'],
+                    borderColor: ['#1565c0', '#f57f17', '#1b5e20', '#b71c1c', '#4a148c', '#0d47a1'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: false,
+                plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } }
+            }
+        });
+    </script>
+}

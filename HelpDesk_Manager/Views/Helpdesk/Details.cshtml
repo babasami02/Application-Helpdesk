@@ -64,6 +64,15 @@
                         <div style="font-size:13px;margin-top:2px;">@(Model.Nature?.NomNature ?? "—")</div>
                     </div>
                     <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;
+                                    margin-bottom:4px;">Catégorie</div>
+                        <div style="font-size:13px;margin-top:2px;">@(Model.Categorie?.NomCategorie ?? "—")</div>
+                    </div>
+                    <div>
+                        <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;">Sous-catégorie</div>
+                        <div style="font-size:13px;margin-top:2px;">@(Model.SousCategorie?.NomSousCategorie ?? "—")</div>
+                    </div>
+                    <div>
                         <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;">Priorité</div>
                         <div style="margin-top:2px;">
                             @if (!string.IsNullOrEmpty(Model.PrioriteCalculee))
@@ -238,7 +247,7 @@
 
                         <div style="margin-bottom:12px;">
                             <label class="form-label">Domaine *</label>
-                            <select name="idDomaine" asp-items="ViewBag.Domaines"
+                            <select name="idDomaine" id="idDomaine" asp-items="ViewBag.Domaines"
                                     class="form-input" required>
                                 <option value="">-- Sélectionner --</option>
                             </select>
@@ -246,6 +255,19 @@
                         <div style="margin-bottom:12px;">
                             <label class="form-label">Nature *</label>
                             <select name="idNature" asp-items="ViewBag.Natures" class="form-input" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Catégorie *</label>
+                            <select name="idCategorie" id="idCategorie" asp-items="ViewBag.Categories"
+                                    class="form-input" required>
+                                <option value="">-- Sélectionner --</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Sous-Catégorie </label>
+                            <select name="idSousCategorie" id="idSousCategorie" asp-items="ViewBag.SousCategories" class="form-input" >
                                 <option value="">-- Sélectionner --</option>
                             </select>
                         </div>
@@ -395,3 +417,55 @@
         resize: vertical;
     }
 </style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#idDomaine').change(function () {
+                var idDomaine = $(this).val();
+                var $categorie = $('#idCategorie');
+                var $sousCategorie = $('#idSousCategorie');
+
+                $categorie.empty();
+                $categorie.append('<option value="">-- Sélectionner --</option>');
+                $sousCategorie.empty();
+                $sousCategorie.append('<option value="">-- Sélectionner --</option>');
+
+                if (idDomaine) {
+                    $.ajax({
+                        url: '@Url.Action("GetCategoriesByDomaine", "Helpdesk")',
+                        type: 'GET',
+                        data: { idDomaine: idDomaine },
+                        success: function (data) {
+                            $.each(data, function (i, item) {
+                                $categorie.append('<option value="' + item.value + '">' + item.text + '</option>');
+                            });
+                        }
+                    });
+                }
+            });
+
+            $('#idCategorie').change(function () {
+                var idCategorie = $(this).val();
+                var $sousCategorie = $('#idSousCategorie');
+
+                $sousCategorie.empty();
+                $sousCategorie.append('<option value="">-- Sélectionner --</option>');
+
+                if (idCategorie) {
+                    $.ajax({
+                        url: '@Url.Action("GetSousCategoriesByCategorie", "Helpdesk")',
+                        type: 'GET',
+                        data: { idCategorie: idCategorie },
+                        success: function (data) {
+                            $.each(data, function (i, item) {
+                                $sousCategorie.append('<option value="' + item.value + '">' + item.text + '</option>');
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}
+

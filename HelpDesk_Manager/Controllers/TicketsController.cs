@@ -151,13 +151,19 @@ namespace HelpDesk_Manager.Controllers
             var ticket = await _db.Tickets
                 .Include(t => t.Statut)
                 .Include(t => t.Domaine)
+                .Include(t => t.Categorie)
+                .Include(t => t.SousCategorie)
                 .Include(t => t.Nature)
                 .Include(t => t.Urgence)
                 .Include(t => t.Impact)
                 .Include(t => t.Demandeur)
                 .Include(t => t.PiecesJointes)
-                .Include(t => t.Interventions).ThenInclude(i => i.Technicien)
-                .Include(t => t.Historique).ThenInclude(h => h.Utilisateur)
+                .Include(t => t.Interventions)
+                    .ThenInclude(i => i.Technicien)
+                .Include(t => t.Interventions)
+                    .ThenInclude(i => i.Statut)
+                .Include(t => t.Historique)
+                    .ThenInclude(h => h.Utilisateur)
                 .FirstOrDefaultAsync(t => t.IdTicket == id);
 
             if (ticket == null) return NotFound();

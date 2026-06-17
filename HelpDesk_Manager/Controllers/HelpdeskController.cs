@@ -66,6 +66,7 @@ namespace HelpDesk_Manager.Controllers
                 .OrderByDescending(y => y)
                 .ToListAsync();
             ViewBag.Domaine = domaine;
+
             ViewBag.Statuts = await _db.StatutsTicket.ToListAsync();
             ViewBag.Domaines = new SelectList(
                 await _db.Domaines.ToListAsync(), "IdDomaine", "NomDomaine");
@@ -85,6 +86,8 @@ namespace HelpDesk_Manager.Controllers
             var ticket = await _db.Tickets
                 .Include(t => t.Statut)
                 .Include(t => t.Domaine)
+                .Include(t => t.Categorie)
+                .Include(t => t.SousCategorie)
                 .Include(t => t.Nature)
                 .Include(t => t.Urgence)
                 .Include(t => t.Impact)
@@ -108,7 +111,7 @@ namespace HelpDesk_Manager.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Qualifier(int idTicket, int? idUrgence, int? idImpact,
-                                                    int? idDomaine, int? idNature)
+                                                    int? idDomaine, int? idNature, int? idCategorie, int? idSousCategorie)
         {
             var ticket = await _db.Tickets
                 .Include(t => t.Urgence)
@@ -129,6 +132,8 @@ namespace HelpDesk_Manager.Controllers
             ticket.IdImpact = idImpact.Value;
             ticket.IdDomaine = idDomaine.Value;
             ticket.IdNature = idNature.Value;
+            ticket.IdCategorie = idCategorie;
+            ticket.IdSousCategorie = idSousCategorie;
             ticket.IdHelpdesk = idUser;
 
             var urgence = await _db.NiveauxUrgence.FindAsync(idUrgence.Value);
@@ -332,6 +337,18 @@ namespace HelpDesk_Manager.Controllers
                 await _db.Domaines.Where(c => c.IsActive).ToListAsync(),
                 "IdDomaine", "NomDomaine", ticket.IdDomaine);
 
+            ViewBag.Categories = new SelectList(
+                ticket.IdDomaine.HasValue 
+                    ? await _db.Categories.Where(c => c.IdDomaine == ticket.IdDomaine.Value).ToListAsync()
+                    : new List<Categorie>(),
+                "IdCategorie", "NomCategorie", ticket.IdCategorie);
+
+            ViewBag.SousCategories = new SelectList(
+                ticket.IdCategorie.HasValue 
+                    ? await _db.SousCategories.Where(s => s.IdCategorie == ticket.IdCategorie.Value).ToListAsync()
+                    : new List<SousCategorie>(),
+                "IdSousCategorie", "NomSousCategorie", ticket.IdSousCategorie);
+
             ViewBag.Natures = new SelectList(
                 await _db.Natures.ToListAsync(),
                 "IdNature", "NomNature", ticket.IdNature);
@@ -355,6 +372,30 @@ namespace HelpDesk_Manager.Controllers
                 _ => "P4"
             };
         }
+
+        // ── Endpoints AJAX pour les listes déroulantes dynamiques ──
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> GetCategoriesByDomaine(int idDomaine)
+        {
+            var categories = await _db.Categories
+                .Where(c => c.IdDomaine == idDomaine)
+                .Select(c => new { value = c.IdCategorie, text = c.NomCategorie })
+                .ToListAsync();
+            return Json(categories);
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> GetSousCategoriesByCategorie(int idCategorie)
+        {
+            var sousCategories = await _db.SousCategories
+                .Where(s => s.IdCategorie == idCategorie)
+                .Select(s => new { value = s.IdSousCategorie, text = s.NomSousCategorie })
+                .ToListAsync();
+            return Json(sousCategories);
+        }
+
         // ── Performance ──────────────────────────────────────────────
         public async Task<IActionResult> Performance()
         {

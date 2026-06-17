@@ -11,6 +11,8 @@ namespace HelpDesk_Manager.Data
         public DbSet<Role>                Roles                { get; set; }
         public DbSet<Utilisateur>         Utilisateurs         { get; set; }
         public DbSet<Domaine>             Domaines             { get; set; }
+        public DbSet<Categorie> Categories { get; set; }
+        public DbSet<SousCategorie> SousCategories { get; set; }
         public DbSet<Nature>              Natures              { get; set; }
         public DbSet<StatutTicket>        StatutsTicket        { get; set; }
         public DbSet<StatutIntervention>  StatutsIntervention  { get; set; }
@@ -53,6 +55,8 @@ namespace HelpDesk_Manager.Data
             modelBuilder.Entity<Role>().ToTable("Roles");
             modelBuilder.Entity<Utilisateur>().ToTable("Utilisateurs");
             modelBuilder.Entity<Domaine>().ToTable("Domaines");
+            modelBuilder.Entity<Categorie>().ToTable("Categories");
+            modelBuilder.Entity<SousCategorie>().ToTable("SousCategories");
             modelBuilder.Entity<Nature>().ToTable("Natures");
             modelBuilder.Entity<StatutTicket>().ToTable("StatutsTicket");
             modelBuilder.Entity<StatutIntervention>().ToTable("StatutsIntervention");
