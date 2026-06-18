@@ -1,9 +1,8 @@
 -- ============================================================
 -- HELPDESK MANAGER - Script de création de la base de données
 -- Projet: NOVEC - Direction IT
--- Auteur: Baba Sami
--- Date: 2026
--- Base: SQL Server (SQL Server Management Studio)
+-- Version: 2.0 (synchronisé avec la base de données réelle)
+-- Base: SQL Server (SQL Server Management Studio).
 -- ============================================================
 
 USE master;
@@ -24,58 +23,60 @@ USE HelpDesk_Manager;
 GO
 
 -- ============================================================
--- 1. ENUMS / TABLES DE RÉFÉRENCE
+-- 1. TABLES DE RÉFÉRENCE
 -- ============================================================
 
--- Rôles utilisateurs
 CREATE TABLE Roles (
-    IdRole      INT           NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    NomRole     NVARCHAR(50)  NOT NULL UNIQUE,  -- 'Employe','Helpdesk','Technicien','Administrateur'
-    Description NVARCHAR(200) NULL
+    IdRole      INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomRole     NVARCHAR(100)  NOT NULL UNIQUE,
+    Description NVARCHAR(400)  NULL
 );
 
--- Catégories de tickets
+CREATE TABLE Domaines (
+    IdDomaine   INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomDomaine  NVARCHAR(200)  NOT NULL,
+    Description NVARCHAR(600)  NULL,
+    IsActive    BIT            NOT NULL DEFAULT 1
+);
+
 CREATE TABLE Categories (
-    IdCategorie  INT           NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    NomCategorie NVARCHAR(100) NOT NULL UNIQUE,  -- 'IT', 'Moyens généraux', 'Développement IT', 'Demande de service IT'
-    Description  NVARCHAR(300) NULL,
-    IsActive     BIT           NOT NULL DEFAULT 1
+    IdCategorie  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomCategorie NVARCHAR(200)  NOT NULL,
+    IdDomaine    INT            NOT NULL REFERENCES Domaines(IdDomaine)
 );
 
--- Niveaux d'urgence
+CREATE TABLE SousCategories (
+    IdSousCategorie  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomSousCategorie NVARCHAR(200)  NOT NULL,
+    IdCategorie      INT            NOT NULL REFERENCES Categories(IdCategorie)
+);
+
+CREATE TABLE Natures (
+    IdNature  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomNature NVARCHAR(200)  NOT NULL
+);
+
 CREATE TABLE NiveauxUrgence (
-    IdUrgence  INT          NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    NomUrgence NVARCHAR(50) NOT NULL UNIQUE,  -- 'Critique', 'Haute', 'Moyenne', 'Basse'
-    Ordre      INT          NOT NULL           -- pour le tri (1=Critique, 4=Basse)
+    IdUrgence  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomUrgence NVARCHAR(100)  NOT NULL UNIQUE,
+    Ordre      INT            NOT NULL
 );
 
--- Niveaux d'impact
 CREATE TABLE NiveauxImpact (
-    IdImpact  INT          NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    NomImpact NVARCHAR(50) NOT NULL UNIQUE,  -- 'Critique', 'Fort', 'Moyen', 'Faible'
-    Ordre     INT          NOT NULL
+    IdImpact  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomImpact NVARCHAR(100)  NOT NULL UNIQUE,
+    Ordre     INT            NOT NULL
 );
 
--- Statuts possibles d'un ticket
 CREATE TABLE StatutsTicket (
-    IdStatut  INT          NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    NomStatut NVARCHAR(50) NOT NULL UNIQUE,
-    -- 'Nouveau', 'Hors périmètre', 'En cours', 'Annulé', 'Résolu', 'Fermé'
-    Couleur   NVARCHAR(20) NULL  -- ex: '#28a745' pour l'affichage badge
+    IdStatut  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomStatut NVARCHAR(100)  NOT NULL UNIQUE,
+    Couleur   NVARCHAR(40)   NULL
 );
 
--- Statuts possibles d'une intervention
 CREATE TABLE StatutsIntervention (
-    IdStatut  INT          NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    NomStatut NVARCHAR(50) NOT NULL UNIQUE
-    -- 'Planifiée', 'En cours', 'Suspendue', 'Terminée', 'Annulée'
-);
-
--- Types de sous-catégorie ticket (optionnel, extensible)
-CREATE TABLE TypesTicket (
-    IdType    INT          NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    NomType   NVARCHAR(100) NOT NULL,
-    IdCategorie INT        NOT NULL REFERENCES Categories(IdCategorie)
+    IdStatut  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    NomStatut NVARCHAR(100)  NOT NULL UNIQUE
 );
 
 -- ============================================================
@@ -83,26 +84,20 @@ CREATE TABLE TypesTicket (
 -- ============================================================
 
 CREATE TABLE Utilisateurs (
-    IdUtilisateur  INT           NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    Nom            NVARCHAR(100) NOT NULL,
-    Prenom         NVARCHAR(100) NOT NULL,
-    Email          NVARCHAR(200) NOT NULL UNIQUE,
-    MotDePasse     NVARCHAR(256) NOT NULL,  -- hash bcrypt/SHA256
-    IdRole         INT           NOT NULL REFERENCES Roles(IdRole),
-    IsActive       BIT           NOT NULL DEFAULT 1,
-    DateCreation   DATETIME2     NOT NULL DEFAULT GETDATE(),
-    DernierAcces   DATETIME2     NULL,
-
-    -- Champs spécifiques Employé
-    Direction      NVARCHAR(100) NULL,
-    Departement    NVARCHAR(100) NULL,
-
-    -- Champs spécifiques Technicien
-    Niveau         NVARCHAR(50)  NULL,  -- 'N1', 'N2', 'N3'
-    Specialite     NVARCHAR(150) NULL,
-
-    -- Contact
-    Telephone      NVARCHAR(20)  NULL
+    IdUtilisateur  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    Nom            NVARCHAR(200)  NOT NULL,
+    Prenom         NVARCHAR(200)  NOT NULL,
+    Email          NVARCHAR(400)  NOT NULL UNIQUE,
+    MotDePasse     NVARCHAR(512)  NOT NULL,
+    IdRole         INT            NOT NULL REFERENCES Roles(IdRole),
+    IsActive       BIT            NOT NULL DEFAULT 1,
+    DateCreation   DATETIME2      NOT NULL DEFAULT GETDATE(),
+    DernierAcces   DATETIME2      NULL,
+    Direction      NVARCHAR(200)  NULL,
+    Departement    NVARCHAR(200)  NULL,
+    Niveau         NVARCHAR(100)  NULL,
+    Specialite     NVARCHAR(300)  NULL,
+    Telephone      NVARCHAR(40)   NULL
 );
 
 -- ============================================================
@@ -110,34 +105,27 @@ CREATE TABLE Utilisateurs (
 -- ============================================================
 
 CREATE TABLE Tickets (
-    IdTicket         INT            NOT NULL IDENTITY(1000,1) PRIMARY KEY,
-    Titre            NVARCHAR(200)  NOT NULL,
-    Description      NVARCHAR(MAX)  NOT NULL,
-    DateOuverture    DATETIME2      NOT NULL DEFAULT GETDATE(),
-    DateResolution   DATETIME2      NULL,
-    DateFermeture    DATETIME2      NULL,
-
-    -- Relations
-    IdDemandeur      INT            NOT NULL REFERENCES Utilisateurs(IdUtilisateur),
-    IdHelpdesk       INT            NULL     REFERENCES Utilisateurs(IdUtilisateur),
-    IdCategorie      INT            NULL     REFERENCES Categories(IdCategorie),
-    IdType           INT            NULL     REFERENCES TypesTicket(IdType),
-    IdStatut         INT            NOT NULL REFERENCES StatutsTicket(IdStatut),
-    IdUrgence        INT            NULL     REFERENCES NiveauxUrgence(IdUrgence),
-    IdImpact         INT            NULL     REFERENCES NiveauxImpact(IdImpact),
-
-    -- Priorité calculée automatiquement (P1 à P4)
-    PrioriteCalculee NVARCHAR(5)    NULL,
-
-    -- Clôture / résolution
-    MotifRejet       NVARCHAR(500)  NULL,
-    NoteEmployee     INT            NULL CHECK (NoteEmployee BETWEEN 1 AND 5),
-    CommentaireNote  NVARCHAR(500)  NULL,
-
-    -- SLA
-    DelaiResolutionCible DATETIME2  NULL,  -- calculé selon priorité
-
-    CONSTRAINT CK_Ticket_DemandeurRole CHECK (IdDemandeur <> IdHelpdesk)
+    IdTicket             INT            NOT NULL IDENTITY(1000,1) PRIMARY KEY,
+    Titre                NVARCHAR(400)  NOT NULL,
+    Description          NVARCHAR(MAX)  NOT NULL,
+    DateOuverture        DATETIME2      NOT NULL DEFAULT GETDATE(),
+    DateResolution       DATETIME2      NULL,
+    DateFermeture        DATETIME2      NULL,
+    IdDemandeur          INT            NOT NULL REFERENCES Utilisateurs(IdUtilisateur),
+    IdHelpdesk           INT            NULL     REFERENCES Utilisateurs(IdUtilisateur),
+    IdDomaine            INT            NULL     REFERENCES Domaines(IdDomaine),
+    IdNature             INT            NULL     REFERENCES Natures(IdNature),
+    IdStatut             INT            NOT NULL REFERENCES StatutsTicket(IdStatut),
+    IdUrgence            INT            NULL     REFERENCES NiveauxUrgence(IdUrgence),
+    IdImpact             INT            NULL     REFERENCES NiveauxImpact(IdImpact),
+    PrioriteCalculee     NVARCHAR(10)   NULL,
+    MotifRejet           NVARCHAR(1000) NULL,
+    NoteEmployee         INT            NULL CHECK (NoteEmployee BETWEEN 1 AND 5),
+    CommentaireNote      NVARCHAR(1000) NULL,
+    DelaiResolutionCible DATETIME2      NULL,
+    NumeroAnnuel         INT            NOT NULL DEFAULT 0,
+    IdCategorie          INT            NULL     REFERENCES Categories(IdCategorie),
+    IdSousCategorie      INT            NULL     REFERENCES SousCategories(IdSousCategorie)
 );
 
 -- ============================================================
@@ -147,10 +135,10 @@ CREATE TABLE Tickets (
 CREATE TABLE PiecesJointes (
     IdPieceJointe  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
     IdTicket       INT            NOT NULL REFERENCES Tickets(IdTicket) ON DELETE CASCADE,
-    NomFichier     NVARCHAR(255)  NOT NULL,
-    CheminFichier  NVARCHAR(500)  NOT NULL,
-    Taille         BIGINT         NOT NULL,  -- en octets
-    Format         NVARCHAR(20)   NOT NULL,  -- 'jpg', 'png', 'pdf', etc.
+    NomFichier     NVARCHAR(510)  NOT NULL,
+    CheminFichier  NVARCHAR(1000) NOT NULL,
+    Taille         BIGINT         NOT NULL,
+    Format         NVARCHAR(40)   NOT NULL,
     DateAjout      DATETIME2      NOT NULL DEFAULT GETDATE(),
     IdUtilisateur  INT            NOT NULL REFERENCES Utilisateurs(IdUtilisateur)
 );
@@ -160,16 +148,19 @@ CREATE TABLE PiecesJointes (
 -- ============================================================
 
 CREATE TABLE Interventions (
-    IdIntervention     INT           NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    IdTicket           INT           NOT NULL REFERENCES Tickets(IdTicket),
-    IdTechnicien       INT           NOT NULL REFERENCES Utilisateurs(IdUtilisateur),
-    DescriptionAction  NVARCHAR(MAX) NOT NULL,
-    DateAction         DATETIME2     NOT NULL DEFAULT GETDATE(),
-    TempsPasse         INT           NULL,  -- en minutes
-    IdStatut           INT           NOT NULL REFERENCES StatutsIntervention(IdStatut),
-    Notes              NVARCHAR(MAX) NULL,
-    DateDebut          DATETIME2     NULL,
-    DateFin            DATETIME2     NULL
+    IdIntervention    INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    IdTicket          INT            NOT NULL REFERENCES Tickets(IdTicket),
+    IdTechnicien      INT            NOT NULL REFERENCES Utilisateurs(IdUtilisateur),
+    DescriptionAction NVARCHAR(MAX)  NOT NULL,
+    DateAction        DATETIME2      NOT NULL DEFAULT GETDATE(),
+    TempsPasse        INT            NULL,
+    IdStatut          INT            NOT NULL REFERENCES StatutsIntervention(IdStatut),
+    Notes             NVARCHAR(MAX)  NULL,
+    DateDebut         DATETIME2      NULL,
+    DateFin           DATETIME2      NULL,
+    NumeroIntervention INT           NOT NULL DEFAULT 0,
+    DatePlanifiee     DATETIME                NULL,
+    MotifStatut       NVARCHAR(1000) NULL
 );
 
 -- ============================================================
@@ -177,14 +168,14 @@ CREATE TABLE Interventions (
 -- ============================================================
 
 CREATE TABLE HistoriqueTickets (
-    IdHistorique  INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    IdTicket      INT            NOT NULL REFERENCES Tickets(IdTicket),
-    IdUtilisateur INT            NOT NULL REFERENCES Utilisateurs(IdUtilisateur),
-    DateAction    DATETIME2      NOT NULL DEFAULT GETDATE(),
-    Action        NVARCHAR(100)  NOT NULL,  -- 'Création', 'Qualification', 'Assignation', etc.
-    AncienneValeur NVARCHAR(500) NULL,
-    NouvelleValeur NVARCHAR(500) NULL,
-    Commentaire   NVARCHAR(500)  NULL
+    IdHistorique   INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    IdTicket       INT            NOT NULL REFERENCES Tickets(IdTicket),
+    IdUtilisateur  INT            NOT NULL REFERENCES Utilisateurs(IdUtilisateur),
+    DateAction     DATETIME2      NOT NULL DEFAULT GETDATE(),
+    Action         NVARCHAR(200)  NOT NULL,
+    AncienneValeur NVARCHAR(1000) NULL,
+    NouvelleValeur NVARCHAR(1000) NULL,
+    Commentaire    NVARCHAR(1000) NULL
 );
 
 -- ============================================================
@@ -192,28 +183,44 @@ CREATE TABLE HistoriqueTickets (
 -- ============================================================
 
 CREATE TABLE Notifications (
-    IdNotification INT           NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    IdUtilisateur  INT           NOT NULL REFERENCES Utilisateurs(IdUtilisateur),
-    IdTicket       INT           NULL     REFERENCES Tickets(IdTicket),
-    Message        NVARCHAR(500) NOT NULL,
-    DateEnvoi      DATETIME2     NOT NULL DEFAULT GETDATE(),
-    IsLue          BIT           NOT NULL DEFAULT 0
+    IdNotification INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    IdUtilisateur  INT            NOT NULL REFERENCES Utilisateurs(IdUtilisateur),
+    IdTicket       INT            NULL     REFERENCES Tickets(IdTicket),
+    Message        NVARCHAR(1000) NOT NULL,
+    DateEnvoi      DATETIME2      NOT NULL DEFAULT GETDATE(),
+    IsLue          BIT            NOT NULL DEFAULT 0
 );
 
 -- ============================================================
--- 8. INDEXES (PERFORMANCE)
+-- 8. CONFIGURATION SLA
 -- ============================================================
 
-CREATE INDEX IX_Tickets_Statut       ON Tickets(IdStatut);
-CREATE INDEX IX_Tickets_Demandeur    ON Tickets(IdDemandeur);
-CREATE INDEX IX_Tickets_Helpdesk     ON Tickets(IdHelpdesk);
-CREATE INDEX IX_Tickets_DateOuv      ON Tickets(DateOuverture DESC);
-CREATE INDEX IX_Interventions_Ticket ON Interventions(IdTicket);
-CREATE INDEX IX_Interventions_Tech   ON Interventions(IdTechnicien);
-CREATE INDEX IX_Notifs_User          ON Notifications(IdUtilisateur, IsLue);
+CREATE TABLE ConfigurationSLA (
+    IdSLA                 INT            NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    IdUrgence             INT            NOT NULL REFERENCES NiveauxUrgence(IdUrgence),
+    IdImpact              INT            NOT NULL REFERENCES NiveauxImpact(IdImpact),
+    IdDomaine             INT            NULL     REFERENCES Domaines(IdDomaine),
+    PrioriteResultante    NVARCHAR(10)   NOT NULL,
+    DelaiReponsHeures     INT            NOT NULL,
+    DelaiResolutionHeures INT            NOT NULL,
+    Description           NVARCHAR(400)  NULL
+);
 
 -- ============================================================
--- 9. DONNÉES DE RÉFÉRENCE (SEED)
+-- 9. INDEXES
+-- ============================================================
+
+CREATE INDEX IX_Tickets_Statut              ON Tickets(IdStatut);
+CREATE INDEX IX_Tickets_Demandeur           ON Tickets(IdDemandeur);
+CREATE INDEX IX_Tickets_Helpdesk            ON Tickets(IdHelpdesk);
+CREATE INDEX IX_Tickets_Domaine             ON Tickets(IdDomaine);
+CREATE INDEX IX_Tickets_DateOuv             ON Tickets(DateOuverture DESC);
+CREATE INDEX IX_Interventions_Ticket        ON Interventions(IdTicket);
+CREATE INDEX IX_Interventions_Tech          ON Interventions(IdTechnicien);
+CREATE INDEX IX_Notifs_User                 ON Notifications(IdUtilisateur, IsLue);
+
+-- ============================================================
+-- 10. DONNÉES DE RÉFÉRENCE (SEED)
 -- ============================================================
 
 INSERT INTO Roles (NomRole, Description) VALUES
@@ -222,60 +229,37 @@ INSERT INTO Roles (NomRole, Description) VALUES
 ('Technicien',     'Technicien IT - résolution des tickets'),
 ('Administrateur', 'Administrateur système - gestion complète');
 
-INSERT INTO Categories (NomCategorie, Description) VALUES
-('Support IT',              'Pannes, bugs logiciels, accès systèmes'),
-('Moyens généraux',         'Locaux, équipements bureau, logistique'),
-('Développement IT',        'Anomalies applicatives, nouvelles fonctionnalités'),
-('Demande de service IT',   'Installation logiciel, création de compte, accès');
-
 INSERT INTO NiveauxUrgence (NomUrgence, Ordre) VALUES
-('Critique', 1),
-('Haute',    2),
-('Moyenne',  3),
-('Basse',    4);
+('Critique', 1), ('Haute', 2), ('Moyenne', 3), ('Basse', 4);
 
 INSERT INTO NiveauxImpact (NomImpact, Ordre) VALUES
-('Critique', 1),
-('Fort',     2),
-('Moyen',    3),
-('Faible',   4);
+('Critique', 1), ('Fort', 2), ('Moyen', 3), ('Faible', 4);
 
 INSERT INTO StatutsTicket (NomStatut, Couleur) VALUES
-('Nouveau',          '#17a2b8'),
-('Hors périmètre',   '#6f42c1'),
-('En cours',         '#007bff'),
-('Annulé',           '#dc3545'),
-('Résolu',           '#28a745'),
-('Fermé',            '#6c757d');
+('Nouveau',        '#17a2b8'),
+('Hors périmètre', '#6f42c1'),
+('En cours',       '#007bff'),
+('Annulé',         '#dc3545'),
+('Résolu',         '#28a745'),
+('Fermé',          '#6c757d');
 
 INSERT INTO StatutsIntervention (NomStatut) VALUES
-('Planifiée'),
-('En cours'),
-('Suspendue'),
-('Terminée'),
-('Annulée');
+('Planifiée'), ('En cours'), ('Suspendue'), ('Terminée'), ('Annulée');
 
--- Types de tickets par catégorie
-INSERT INTO TypesTicket (NomType, IdCategorie) VALUES
-('Problème de connexion',       1),
-('Panne matérielle',            1),
-('Accès refusé',                1),
-('Problème messagerie',         1),
-('Demande d''équipement',       2),
-('Maintenance locaux',          2),
-('Bug applicatif',              3),
-('Nouvelle fonctionnalité',     3),
-('Installation logiciel',       4),
-('Création de compte',          4),
-('Réinitialisation mot de passe',4);
+INSERT INTO Domaines (NomDomaine, Description) VALUES
+('Support IT',            'Pannes, bugs logiciels, accès systèmes'),
+('Moyens généraux',       'Locaux, équipements bureau, logistique'),
+('Développement IT',      'Anomalies applicatives, nouvelles fonctionnalités'),
+('Demande de service IT', 'Installation logiciel, création de compte, accès');
 
--- Compte administrateur par défaut (mot de passe: Admin@123 - à hasher en prod)
+INSERT INTO Natures (NomNature) VALUES
+('Incident'), ('Demande de service'), ('Demande de changement'), ('Problème');
+
 INSERT INTO Utilisateurs (Nom, Prenom, Email, MotDePasse, IdRole)
 VALUES ('Admin', 'Système', 'admin@novec.ma',
-        '8C6976E5B5410415BDE908BD4DEE15DFB167A9C873FC4BB8A81F6F2AB448A918', -- SHA256 de 'Admin@123'
+        '8C6976E5B5410415BDE908BD4DEE15DFB167A9C873FC4BB8A81F6F2AB448A918',
         (SELECT IdRole FROM Roles WHERE NomRole = 'Administrateur'));
 
--- Compte Helpdesk de test
 INSERT INTO Utilisateurs (Nom, Prenom, Email, MotDePasse, IdRole)
 VALUES ('HelpDesk', 'Support', 'helpdesk@novec.ma',
         '8C6976E5B5410415BDE908BD4DEE15DFB167A9C873FC4BB8A81F6F2AB448A918',
@@ -283,4 +267,4 @@ VALUES ('HelpDesk', 'Support', 'helpdesk@novec.ma',
 
 GO
 
-PRINT '✅ Base de données HelpDesk_Manager créée avec succès.';
+PRINT '✅ Base de données HelpDesk_Manager v2.0 créée avec succès.';
