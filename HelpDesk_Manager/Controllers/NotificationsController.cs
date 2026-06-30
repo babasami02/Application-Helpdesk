@@ -25,6 +25,7 @@ namespace HelpDesk_Manager.Controllers
             await _db.SaveChangesAsync();
 
             var notifications = await _db.Notifications
+                .Include(n => n.Ticket)
                 .Where(n => n.IdUtilisateur == idUser)
                 .OrderByDescending(n => n.DateEnvoi)
                 .Take(50)

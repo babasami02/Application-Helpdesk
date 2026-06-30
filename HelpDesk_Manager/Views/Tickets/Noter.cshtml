@@ -10,6 +10,17 @@
 
 <div style="max-width:600px;">
     <div class="card">
+        <div class="card-body">
+
+            @if (TempData["Erreur"] != null)
+            {
+                <div style="background:#fdecea;border:1px solid #e74c3c;color:#c0392b;
+                    border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:14px;">
+                    ⚠️ @TempData["Erreur"]
+                </div>
+            }
+
+           
         <div class="card-header">
             <h3>⭐ Votre avis sur la résolution</h3>
         </div>
@@ -66,18 +77,21 @@
                                                height:20px;"></div>
                 </div>
 
-                @* Commentaire *@
-                <div style="margin-bottom:24px;">
-                    <label style="display:block;font-size:13px;font-weight:600;
-                                  color:#444;margin-bottom:6px;">
-                        Commentaire (optionnel)
-                    </label>
-                    <textarea name="commentaire" rows="4"
-                              style="width:100%;padding:10px 12px;border:1.5px solid #ddd;
-                                     border-radius:8px;font-size:14px;font-family:inherit;
-                                     outline:none;resize:vertical;"
-                              placeholder="Décrivez votre expérience, ce qui s'est bien passé ou ce qui pourrait être amélioré..."></textarea>
-                </div>
+                    @* Commentaire *@
+                    <div style="margin-bottom:24px;">
+                        <label style="display:block;font-size:13px;font-weight:600;
+                  color:#444;margin-bottom:6px;" id="labelCommentaire">
+                            Commentaire (optionnel)
+                        </label>
+                        <textarea name="commentaire" id="commentaireInput" rows="4"
+                                  style="width:100%;padding:10px 12px;border:1.5px solid #ddd;
+                     border-radius:8px;font-size:14px;font-family:inherit;
+                     outline:none;resize:vertical;"
+                                  placeholder="Décrivez votre expérience, ce qui s'est bien passé ou ce qui pourrait être amélioré..."></textarea>
+                        <div id="erreurCommentaire" style="display:none;color:#e74c3c;font-size:12px;margin-top:6px;">
+                            Un commentaire est obligatoire pour une note de 1 ou 2 étoiles.
+                        </div>
+                    </div>
 
                 @* Boutons *@
                 <div style="display:flex;gap:12px;justify-content:flex-end;">
@@ -92,35 +106,81 @@
     </div>
 </div>
 
-<script>
-    const labels = {
-        1: "😞 Très insatisfait",
-        2: "😕 Insatisfait",
-        3: "😐 Neutre",
-        4: "😊 Satisfait",
-        5: "😄 Très satisfait"
-    };
+    <script>
+        const labels = {
+            1: "😞 Très insatisfait",
+            2: "😕 Insatisfait",
+            3: "😐 Neutre",
+            4: "😊 Satisfait",
+            5: "😄 Très satisfait"
+        };
 
-    const etoiles   = document.querySelectorAll('.etoile');
-    const noteInput = document.getElementById('noteValue');
-    const btnSoumettre = document.getElementById('btnSoumettre');
-    const labelNote = document.getElementById('labelNote');
+        const etoiles = document.querySelectorAll('.etoile');
+        const noteInput = document.getElementById('noteValue');
+        const btnSoumettre = document.getElementById('btnSoumettre');
+        const labelNote = document.getElementById('labelNote');
+        const commentaireInput = document.getElementById('commentaireInput');
+        const labelCommentaire = document.getElementById('labelCommentaire');
+        const erreurCommentaire = document.getElementById('erreurCommentaire');
+        const formulaire = document.querySelector('form');
 
-    etoiles.forEach(e => {
-        e.addEventListener('mouseover', () => colorier(+e.dataset.valeur, '#f39c12'));
-        e.addEventListener('mouseout',  () => colorier(+noteInput.value, '#f39c12'));
-        e.addEventListener('click', () => {
-            noteInput.value = e.dataset.valeur;
-            colorier(+e.dataset.valeur, '#f39c12');
-            labelNote.textContent = labels[e.dataset.valeur];
-            btnSoumettre.disabled = false;
-            btnSoumettre.style.opacity = '1';
-        });
-    });
-
-    function colorier(valeur, couleur) {
         etoiles.forEach(e => {
-            e.style.color = +e.dataset.valeur <= valeur ? couleur : '#ddd';
+            e.addEventListener('mouseover', () => colorier(+e.dataset.valeur, '#f39c12'));
+            e.addEventListener('mouseout', () => colorier(+noteInput.value, '#f39c12'));
+            e.addEventListener('click', () => {
+                noteInput.value = e.dataset.valeur;
+                colorier(+e.dataset.valeur, '#f39c12');
+                labelNote.textContent = labels[e.dataset.valeur];
+                majEtatCommentaire();
+                majEtatBouton();
+            });
         });
-    }
-</script>
+
+        commentaireInput.addEventListener('input', majEtatBouton);
+
+        function colorier(valeur, couleur) {
+            etoiles.forEach(e => {
+                e.style.color = +e.dataset.valeur <= valeur ? couleur : '#ddd';
+            });
+        }
+
+        function commentaireObligatoire() {
+            const note = +noteInput.value;
+            return note === 1 || note === 2;
+        }
+
+        function majEtatCommentaire() {
+            if (commentaireObligatoire()) {
+                labelCommentaire.innerHTML = 'Commentaire <span style="color:#e74c3c;">*</span> (obligatoire pour 1 ou 2 étoiles)';
+            } else {
+                labelCommentaire.textContent = 'Commentaire (optionnel)';
+                erreurCommentaire.style.display = 'none';
+            }
+        }
+
+        function majEtatBouton() {
+            const noteChoisie = +noteInput.value > 0;
+            const commentaireVide = commentaireInput.value.trim().length === 0;
+            const bloque = noteChoisie && commentaireObligatoire() && commentaireVide;
+
+            if (bloque) {
+                btnSoumettre.disabled = true;
+                btnSoumettre.style.opacity = '0.5';
+                if (commentaireInput === document.activeElement || commentaireInput.value.length > 0) {
+                    erreurCommentaire.style.display = 'block';
+                }
+            } else {
+                erreurCommentaire.style.display = 'none';
+                btnSoumettre.disabled = !noteChoisie;
+                btnSoumettre.style.opacity = noteChoisie ? '1' : '0.5';
+            }
+        }
+
+        formulaire.addEventListener('submit', (e) => {
+            if (commentaireObligatoire() && commentaireInput.value.trim().length === 0) {
+                e.preventDefault();
+                erreurCommentaire.style.display = 'block';
+                commentaireInput.focus();
+            }
+        });
+    </script>

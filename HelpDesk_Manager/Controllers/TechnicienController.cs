@@ -181,13 +181,15 @@ namespace HelpDesk_Manager.Controllers
         }
 
         private async Task<Ticket?> ResoudreTicketSiToutesInterventionsTermineesAsync(
-            int idTicket,
-            int idUser,
-            DateTime dateResolution)
+    int idTicket,
+    int idUser,
+    DateTime dateResolution)
         {
-            var statutTermine = await _db.StatutsIntervention
+            var statutsTerminaux = await _db.StatutsIntervention
                 .AsNoTracking()
-                .FirstAsync(s => s.NomStatut == "Terminée");
+                .Where(s => s.NomStatut == "Terminée" || s.NomStatut == "Annulée")
+                .Select(s => s.IdStatut)
+                .ToListAsync();
 
             var verification = await _db.Tickets
                 .AsNoTracking()
@@ -197,7 +199,7 @@ namespace HelpDesk_Manager.Controllers
                     t.IdTicket,
                     StatutTicket = t.Statut!.NomStatut,
                     TotalInterventions = t.Interventions.Count,
-                    InterventionsNonTerminees = t.Interventions.Count(i => i.IdStatut != statutTermine.IdStatut)
+                    InterventionsNonTerminees = t.Interventions.Count(i => !statutsTerminaux.Contains(i.IdStatut))
                 })
                 .FirstOrDefaultAsync();
 
@@ -224,7 +226,7 @@ namespace HelpDesk_Manager.Controllers
                 IdTicket = ticket.IdTicket,
                 IdUtilisateur = idUser,
                 Action = "Résolution automatique",
-                NouvelleValeur = "Toutes les interventions sont terminées."
+                NouvelleValeur = "Toutes les interventions sont terminées ou annulées."
             });
 
             await _db.SaveChangesAsync();
@@ -259,6 +261,10 @@ namespace HelpDesk_Manager.Controllers
             });
 
             await _db.SaveChangesAsync();
+            var ticket = await _db.Tickets.FindAsync(intervention.IdTicket);
+            var technicien = await _db.Utilisateurs.FindAsync(idUser);
+            if (ticket != null && technicien != null)
+                await _notif.NoteTechnicienAsync(ticket, technicien.NomComplet, note);
             TempData["Success"] = "Note ajoutée.";
             return RedirectToAction("Details", new { id = idIntervention });
         }

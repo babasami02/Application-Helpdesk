@@ -15,6 +15,12 @@
 <div class="card" style="margin-bottom:20px;">
     <div class="card-body" style="padding:14px 20px;">
         <form method="get" style="display:flex;gap:12px;align-items:center;">
+            <select name="annee" class="form-input" style="max-width:120px;">
+                @foreach (var a in ViewBag.Annees as List<int>)
+                {
+                    <option value="@a" selected="@(ViewBag.Annee == a ? "selected" : null)">@a</option>
+                }
+            </select>
             <input type="text" name="recherche" value="@ViewBag.Recherche"
                    placeholder="🔍 Rechercher par N° ou mot-clé..."
                    class="form-input" style="max-width:300px;" />
@@ -29,7 +35,7 @@
                 }
             </select>
             <button type="submit" class="btn btn-secondary">Filtrer</button>
-            @if (ViewBag.Recherche != null || ViewBag.Statut != null)
+            @if (ViewBag.Recherche != null || ViewBag.Statut != null || ViewBag.Annee != DateTime.Now.Year)
             {
                     <a href="@Url.Action("Index")" class="btn btn-secondary">✕ Réinitialiser</a>
             }
@@ -126,7 +132,8 @@
     ["RouteValues"] = new Dictionary<string, string>
     {
         ["recherche"] = ViewBag.Recherche ?? "",
-        ["statut"] = ViewBag.Statut ?? ""
+        ["statut"] = ViewBag.Statut ?? "",
+        ["annee"] = ViewBag.Annee?.ToString() ?? ""
     }
 })
 </div>

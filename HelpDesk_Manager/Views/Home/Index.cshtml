@@ -32,24 +32,60 @@
 </div>
 
 <!-- Actions rapides -->
-<div class="card">
-    <div class="card-header">
-        <h3>Actions rapides</h3>
+<!-- Actions rapides -->
+<div class="card" style="margin-bottom:20px;">
+    
+    <!-- Nouveaux tickets -->
+    <div class="card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>📩 Nouveaux tickets en attente</h3>
+            <a href="@Url.Action("Index","Helpdesk")" style="font-size:13px;color:#1a7a5e;">Voir tout →</a>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Sujet</th>
+                    <th>Domaine</th>
+                    <th>Demandeur</th>
+                    <th>Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var nouveaux = ViewBag.NouveauxTicketsList as List<HelpDesk_Manager.Models.Ticket>;
+                }
+                @if (nouveaux == null || !nouveaux.Any())
+
+                {
+                    <tr>
+                        <td colspan="6" style="text-align:center;padding:30px;color:#999;">
+                            Aucun nouveau ticket en attente. 🎉
+                        </td>
+                    </tr>
+                }
+                @foreach (var t in nouveaux ?? new())
+
+                {
+                    <tr>
+                        <td>
+                            <a href="@Url.Action("Details","Helpdesk", new { id = t.IdTicket })"
+                               style="color:#1a7a5e;font-weight:700;">
+                                @t.NumeroAnnuel/@t.DateOuverture.Year
+                            </a>
+                        </td>
+                        <td style="font-weight:500;max-width:200px;">@t.Titre</td>
+                        <td style="font-size:12px;color:#888;">@(t.Domaine?.NomDomaine ?? "—")</td>
+                        <td style="font-size:12px;color:#888;">@(t.Demandeur?.NomComplet ?? "—")</td>
+                        <td style="font-size:12px;color:#888;">@t.DateOuverture.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <a href="@Url.Action("Details","Helpdesk", new { id = t.IdTicket })"
+                               class="btn btn-secondary btn-sm">Qualifier</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
-    <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;">
-        @if (User.IsInRole("Employe"))
-        {
-            <a href="@Url.Action("Creer","Tickets")" class="btn btn-primary">✏️ Créer un ticket</a>
-            <a href="@Url.Action("Index","Tickets")" class="btn btn-secondary">🎫 Mes tickets</a>
-        }
-        @if (User.IsInRole("Helpdesk") || User.IsInRole("Administrateur"))
-        {
-            <a href="@Url.Action("Index","Helpdesk")" class="btn btn-primary">📋 Consulter les tickets</a>
-            <a href="@Url.Action("Performance","Helpdesk")" class="btn btn-secondary">📊 Performance</a>
-        }
-        @if (User.IsInRole("Technicien"))
-        {
-            <a href="@Url.Action("MesTickets","Technicien")" class="btn btn-primary">🔧 Mes interventions</a>
-        }
-    </div>
-</div>
+

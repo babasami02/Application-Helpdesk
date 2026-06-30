@@ -490,7 +490,7 @@ namespace HelpDesk_Manager.Controllers
                     .Where(i => i.Ticket?.NoteEmployee.HasValue == true)
                     .Select(i => (double)i.Ticket!.NoteEmployee!.Value)
                     .DefaultIfEmpty(0).Average()
-            }).OrderByDescending(t => t.Terminees).ToList();
+            }).OrderByDescending(t => t.NoteMoyenne).ToList();
 
             ViewBag.TotalTickets = tickets.Count;
             ViewBag.MTTR = Math.Round(mttr, 1);

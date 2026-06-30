@@ -73,9 +73,9 @@ namespace HelpDesk_Manager.Controllers
             // Redirection selon le rôle
             return utilisateur.Role!.NomRole switch
             {
-                "Employe"        => RedirectToAction("Index",       "Tickets"),
-                "Helpdesk"       => RedirectToAction("Index",       "Helpdesk"),
-                "Technicien"     => RedirectToAction("MesTickets",  "Technicien"),
+                "Employe"        => RedirectToAction("Index",       "Home"),
+                "Helpdesk"       => RedirectToAction("Index",       "Home"),
+                "Technicien"     => RedirectToAction("Index",  "Home"),
                 "Administrateur" => RedirectToAction("Index",       "Home"),
                 _                => RedirectToAction("Index",       "Home")
             };

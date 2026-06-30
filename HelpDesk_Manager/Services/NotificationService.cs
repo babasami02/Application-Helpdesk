@@ -13,6 +13,11 @@ namespace HelpDesk_Manager.Services
             _db = db;
         }
 
+        private static string NumeroTicket(Ticket ticket)
+        {
+            return $"{ticket.NumeroAnnuel}/{ticket.DateOuverture.Year}";
+        }
+
         // ── Envoi simple ─────────────────────────────────────────
         public async Task EnvoyerAsync(int idUtilisateur, string message, int? idTicket = null)
         {
@@ -43,7 +48,7 @@ namespace HelpDesk_Manager.Services
         public async Task TicketCreeAsync(Ticket ticket, string nomDemandeur)
         {
             await EnvoyerAuxHelpdeskAsync(
-                $"📩 Nouveau ticket #{ticket.IdTicket} soumis par {nomDemandeur} : {ticket.Titre}",
+                $"📩 Nouveau ticket N° {NumeroTicket(ticket)} soumis par {nomDemandeur} : {ticket.Titre}",
                 ticket.IdTicket);
         }
 
@@ -52,7 +57,7 @@ namespace HelpDesk_Manager.Services
         {
             await EnvoyerAsync(
                 ticket.IdDemandeur,
-                $"✅ Votre ticket #{ticket.IdTicket} a été pris en charge par le Helpdesk.",
+                $"✅ Votre ticket N° {NumeroTicket(ticket)} a été pris en charge par le Helpdesk.",
                 ticket.IdTicket);
         }
 
@@ -61,7 +66,7 @@ namespace HelpDesk_Manager.Services
         {
             await EnvoyerAsync(
                 ticket.IdDemandeur,
-                $"❌ Votre ticket #{ticket.IdTicket} a été annulé. Motif : {motif}",
+                $"❌ Votre ticket N° {NumeroTicket(ticket)} a été annulé. Motif : {motif}",
                 ticket.IdTicket);
         }
 
@@ -72,24 +77,32 @@ namespace HelpDesk_Manager.Services
 
             await EnvoyerAsync(
                 ticket.IdDemandeur,
-                $"🚫 Votre ticket #{ticket.IdTicket} est hors périmètre et ne peut être traité.{detailMotif}",
+                $"🚫 Votre ticket N° {NumeroTicket(ticket)} est hors périmètre et ne peut être traité.{detailMotif}",
                 ticket.IdTicket);
         }
 
         // ── 4. Intervention assignée → Technicien ────────────────
         public async Task InterventionAssigneeAsync(Intervention intervention, string titreTicket)
         {
+            var ticket = intervention.Ticket ?? await _db.Tickets.FindAsync(intervention.IdTicket);
+            var numeroTicket = ticket == null ? intervention.IdTicket.ToString() : NumeroTicket(ticket);
+
             await EnvoyerAsync(
                 intervention.IdTechnicien,
-                $"🔧 Nouvelle intervention assignée sur le ticket #{intervention.IdTicket} : {titreTicket}",
+                $"🔧 Nouvelle intervention assignée sur le ticket N° {numeroTicket} : {titreTicket}",
                 intervention.IdTicket);
         }
 
         // ── 5. Intervention terminée → Helpdesk ──────────────────
         public async Task InterventionTermineeAsync(Intervention intervention, string nomTechnicien)
         {
+            var ticket = intervention.Ticket ?? await _db.Tickets.FindAsync(intervention.IdTicket);
+            var numeroIntervention = ticket == null
+                ? intervention.IdIntervention.ToString()
+                : $"{NumeroTicket(ticket)} - {intervention.NumeroIntervention}";
+
             await EnvoyerAuxHelpdeskAsync(
-                $"✅ L'intervention #{intervention.IdIntervention} du ticket #{intervention.IdTicket} a été terminée par {nomTechnicien}.",
+                $"✅ L'intervention N° {numeroIntervention} a été terminée par {nomTechnicien}.",
                 intervention.IdTicket);
         }
 
@@ -98,8 +111,15 @@ namespace HelpDesk_Manager.Services
         {
             await EnvoyerAsync(
                 ticket.IdDemandeur,
-                $"🎉 Votre ticket #{ticket.IdTicket} a été résolu ! Pensez à noter la prestation.",
+                $"🎉 Votre ticket N° {NumeroTicket(ticket)} a été résolu ! Pensez à noter la prestation.",
                 ticket.IdTicket);
+        }
+        // ── 7. Note technicien → Employé + Helpdesk ──────────────
+        public async Task NoteTechnicienAsync(Ticket ticket, string nomTechnicien, string note)
+        {
+            var message = $"📝 Note ajoutée par {nomTechnicien} sur le ticket N° {NumeroTicket(ticket)} : {note}";
+            await EnvoyerAsync(ticket.IdDemandeur, message, ticket.IdTicket);
+            await EnvoyerAuxHelpdeskAsync(message, ticket.IdTicket);
         }
     }
 }

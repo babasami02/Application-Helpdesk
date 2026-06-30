@@ -298,6 +298,8 @@
         .alert-info    { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
     </style>
 </head>
+
+
 <body>
 
 <!-- SIDEBAR -->
@@ -337,7 +339,7 @@
             <div class="nav-section">Helpdesk</div>
             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Helpdesk" ? "active" : "")"
                href="@Url.Action("Index","Helpdesk")">
-                <span class="icon">📋</span> Consultation tickets
+                <span class="icon">📋</span> Les Tickets
             </a>
             <a class="nav-link" href="@Url.Action("Performance","Helpdesk")">
                 <span class="icon">📊</span> Performance
@@ -346,10 +348,10 @@
 
         @if (role == "Technicien" || role =="Helpdesk")
         {
-            <div class="nav-section">Interventions</div>
+            <div class="nav-section">Les Interventions</div>
             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Technicien" ? "active" : "")"
                href="@Url.Action("MesTickets","Technicien")">
-                <span class="icon">🔧</span> Mes Interventions
+                <span class="icon">🔧</span> Les Interventions
             </a>
         }
 
@@ -429,5 +431,7 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @await RenderSectionAsync("Scripts", required: false)
+
+    
 </body>
 </html>

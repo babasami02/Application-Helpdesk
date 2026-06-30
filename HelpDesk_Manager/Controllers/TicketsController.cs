@@ -27,7 +27,7 @@ namespace HelpDesk_Manager.Controllers
 
         // ── Mes Tickets ─────────────────────────────────────────
         [Authorize(Roles = "Employe")]
-        public async Task<IActionResult> Index(string? recherche, string? statut, int page = 1)
+        public async Task<IActionResult> Index(string? recherche, string? statut, int? annee, int page = 1)
         {
             ViewData["Title"] = "Mes Tickets";
             var idUser = int.Parse(User.FindFirst("IdUtilisateur")!.Value);
@@ -37,6 +37,9 @@ namespace HelpDesk_Manager.Controllers
                 .Include(t => t.Domaine)
                 .Where(t => t.IdDemandeur == idUser)
                 .AsQueryable();
+
+            annee ??= DateTime.Now.Year;
+            query = query.Where(t => t.DateOuverture.Year == annee);
 
             if (!string.IsNullOrEmpty(recherche))
                 query = query.Where(t => t.Titre.Contains(recherche) ||
@@ -49,6 +52,13 @@ namespace HelpDesk_Manager.Controllers
 
             var resultat = PagedList<Ticket>.Creer(query, page, 10);
 
+            ViewBag.Annee = annee;
+            ViewBag.Annees = await _db.Tickets
+                .Where(t => t.IdDemandeur == idUser)
+                .Select(t => t.DateOuverture.Year)
+                .Distinct()
+                .OrderByDescending(y => y)
+                .ToListAsync();
             ViewBag.Recherche = recherche;
             ViewBag.Statut = statut;
             ViewBag.Statuts = await _db.StatutsTicket.ToListAsync();
@@ -199,6 +209,7 @@ namespace HelpDesk_Manager.Controllers
 
             if (ticket == null) return NotFound();
 
+
             // Seulement si résolu
             if (ticket.Statut?.NomStatut != "Résolu")
             {
@@ -228,6 +239,20 @@ namespace HelpDesk_Manager.Controllers
                 .FirstOrDefaultAsync(t => t.IdTicket == idTicket && t.IdDemandeur == idUser);
 
             if (ticket == null) return NotFound();
+            if ((note == 1 || note == 2) && string.IsNullOrWhiteSpace(commentaire))
+            {
+                TempData["Erreur"] = "Un commentaire est obligatoire pour une note de 1 ou 2 étoiles.";
+
+                var ticketComplet = await _db.Tickets
+                    .Include(t => t.Statut)
+                    .Include(t => t.Domaine)
+                    .Include(t => t.Interventions)
+                        .ThenInclude(i => i.Technicien)
+                    .FirstOrDefaultAsync(t => t.IdTicket == idTicket && t.IdDemandeur == idUser);
+
+                ViewData["Title"] = $"Noter le ticket #{idTicket}";
+                return View(ticketComplet);
+            }
 
             ticket.NoteEmployee = note;
             ticket.CommentaireNote = commentaire;

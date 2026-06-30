@@ -28,8 +28,14 @@
                         n.Message.StartsWith("❌") ? "❌" :
                         n.Message.StartsWith("🔧") ? "🔧" :
                         n.Message.StartsWith("🎉") ? "🎉" : "🔔")
-        </div>*@
+                </div>*@
                 <div style="flex:1;">
+                    @if (n.Ticket != null)
+                    {
+                        <div style="font-size:12px;font-weight:700;color:#1a7a5e;margin-bottom:4px;">
+                            Ticket N° @n.Ticket.NumeroAnnuel/@n.Ticket.DateOuverture.Year
+                        </div>
+                    }
                     <div style="font-size:14px;color:#2d3436;line-height:1.5;">
                         @n.Message
                     </div>
