@@ -337,11 +337,11 @@
         @if (role == "Helpdesk" || role == "Administrateur")
         {
             <div class="nav-section">Helpdesk</div>
-            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Helpdesk" ? "active" : "")"
+                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Helpdesk" && ViewContext.RouteData.Values["action"]?.ToString() != "Performance" ? "active" : "")"
                href="@Url.Action("Index","Helpdesk")">
                 <span class="icon">📋</span> Les Tickets
             </a>
-            <a class="nav-link" href="@Url.Action("Performance","Helpdesk")">
+                <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Performance" ? "active" : "")" href="@Url.Action("Performance","Helpdesk")">
                 <span class="icon">📊</span> Performance
             </a>
         }

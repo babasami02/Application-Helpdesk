@@ -397,15 +397,19 @@ namespace HelpDesk_Manager.Controllers
         }
 
         // ── Performance ──────────────────────────────────────────────
-        public async Task<IActionResult> Performance()
+        public async Task<IActionResult> Performance(int? annee)
         {
             ViewData["Title"] = "Performance";
+
+            annee ??= DateTime.Now.Year;
+            var anneeEnCours = annee.Value;
 
             var tickets = await _db.Tickets
                 .Include(t => t.Statut)
                 .Include(t => t.Domaine)
                 .Include(t => t.Interventions)
                     .ThenInclude(i => i.Technicien)
+                .Where(t => t.DateOuverture.Year == anneeEnCours)
                 .ToListAsync();
 
             var ticketsFermes = tickets
@@ -480,14 +484,17 @@ namespace HelpDesk_Manager.Controllers
             .Where(u => u.IsActive)
             .ToListAsync();
 
-            var classementTech = techniciens.Select(t => new
+            var classementTech = techniciens
+                .Where(t => t.Interventions.Any(i => i.Ticket != null && i.Ticket.DateOuverture.Year == anneeEnCours))
+                .Select(t => new
             {
                 Nom = t.NomComplet,
                 Specialite = t.Specialite ?? "—",
-                TotalInterventions = t.Interventions.Count,
-                Terminees = t.Interventions.Count(i => i.Statut?.NomStatut == "Terminée"),
+                TotalInterventions = t.Interventions.Count(i => i.Ticket != null && i.Ticket.DateOuverture.Year == anneeEnCours),
+                Terminees = t.Interventions.Count(i => i.Statut?.NomStatut == "Terminée" && i.Ticket != null && i.Ticket.DateOuverture.Year == anneeEnCours),
                 NoteMoyenne = t.Interventions
-                    .Where(i => i.Ticket?.NoteEmployee.HasValue == true)
+                    .Where(i => i.Ticket != null && i.Ticket.DateOuverture.Year == anneeEnCours
+                     && i.Ticket.NoteEmployee.HasValue)
                     .Select(i => (double)i.Ticket!.NoteEmployee!.Value)
                     .DefaultIfEmpty(0).Average()
             }).OrderByDescending(t => t.NoteMoyenne).ToList();
@@ -502,6 +509,13 @@ namespace HelpDesk_Manager.Controllers
             ViewBag.ParDomaine = parDomaine;
             ViewBag.ParPriorite = parPriorite;
             ViewBag.ClassementTech = classementTech;
+
+            ViewBag.Annee = anneeEnCours;
+            ViewBag.Annees = await _db.Tickets
+                .Select(t => t.DateOuverture.Year)
+                .Distinct()
+                .OrderByDescending(y => y)
+                .ToListAsync();
 
             return View();
         }

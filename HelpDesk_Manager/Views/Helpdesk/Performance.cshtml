@@ -3,9 +3,24 @@
     var enDepassement = ViewBag.EnDepassement as List<HelpDesk_Manager.Models.Ticket> ?? new();
 }
 
-<div class="page-header">
-    <h1>📊 Performance & KPIs</h1>
-    <p>Tableau de bord analytique du Helpdesk</p>
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div>
+        <h1>📊 Performance & KPIs</h1>
+        <p>Tableau de bord analytique du Helpdesk</p>
+    </div>
+    <form method="get" style="display:flex;gap:8px;align-items:center;">
+        <select name="annee" onchange="this.form.submit()"
+                style="padding:8px 12px;border:2px solid #1a7a5e;border-radius:8px;
+                       font-size:13px;outline:none;font-weight:600;color:#1a7a5e;
+                       background:#e8f5f0;">
+            @foreach (var a in ViewBag.Annees as List<int>)
+            {
+                <option value="@a" selected="@((int)ViewBag.Annee == a ? "selected" : null)">
+                    @a
+                </option>
+            }
+        </select>
+    </form>
 </div>
 
 @* ── ALERTES SLA ─────────────────────────────────────────────── *@

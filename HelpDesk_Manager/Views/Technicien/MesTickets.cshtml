@@ -11,7 +11,40 @@
 @* Filtres *@
 <div class="card" style="margin-bottom:20px;">
     <div class="card-body" style="padding:14px 20px;">
-        <form method="get" style="display:flex;gap:12px;align-items:center;">
+        <form method="get" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            
+            @if (ViewBag.Role == "Helpdesk")
+            {
+                <select name="idTechnicien" onchange="this.form.submit()"
+                        style="padding:8px 12px;border:2px solid #1a7a5e;border-radius:8px;
+                               font-size:13px;outline:none;font-weight:600;color:#1a7a5e;
+                               background:#e8f5f0;">
+                    <option value="@ViewBag.IdUserConnecte" selected="@((int)ViewBag.IdTechnicien == (int)ViewBag.IdUserConnecte ? "selected" : null)">
+                        Mes interventions
+                    </option>
+                    @foreach (var t in ViewBag.Techniciens as List<HelpDesk_Manager.Models.Utilisateur>)
+                    {
+                        @if (t.IdUtilisateur != (int)ViewBag.IdUserConnecte)
+                        {
+                            <option value="@t.IdUtilisateur" selected="@((int)ViewBag.IdTechnicien == t.IdUtilisateur ? "selected" : null)">
+                                @t.Prenom @t.Nom
+                            </option>
+                        }
+                    }
+                </select>
+            }
+            <select name="annee" onchange="this.form.submit()"
+                    style="padding:8px 12px;border:2px solid #1a7a5e;border-radius:8px;
+                           font-size:13px;outline:none;font-weight:600;color:#1a7a5e;
+                           background:#e8f5f0;">
+                @foreach (var a in ViewBag.Annees as List<int>)
+                {
+                    <option value="@a" selected="@((int)ViewBag.Annee == a ? "selected" : null)">
+                        @a
+                    </option>
+                }
+            </select>
+
             <select name="statut"
                     style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;
                            font-size:13px;outline:none;">
@@ -24,6 +57,7 @@
                     </option>
                 }
             </select>
+
             <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
             @if (ViewBag.Statut != null)
             {

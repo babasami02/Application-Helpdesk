@@ -15,7 +15,7 @@
 <div class="card" style="margin-bottom:20px;">
     <div class="card-body" style="padding:14px 20px;">
         <form method="get" style="display:flex;gap:12px;align-items:center;">
-            <select name="annee" class="form-input" style="max-width:120px;">
+            <select name="annee" class="form-input" style="max-width:120px;" onchange="this.form.submit()">
                 @foreach (var a in ViewBag.Annees as List<int>)
                 {
                     <option value="@a" selected="@(ViewBag.Annee == a ? "selected" : null)">@a</option>

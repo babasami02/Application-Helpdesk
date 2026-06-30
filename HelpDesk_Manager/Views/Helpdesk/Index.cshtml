@@ -20,7 +20,7 @@
 <div class="card" style="margin-bottom:20px;">
     <div class="card-body" style="padding:14px 20px;">
         <form method="get" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-            <select name="annee" style="padding:8px 12px;border:2px solid #1a7a5e;border-radius:8px;
+            <select name="annee" onchange="this.form.submit()" style="padding:8px 12px;border:2px solid #1a7a5e;border-radius:8px;
                              font-size:13px;outline:none;font-weight:600;color:#1a7a5e;
                              background:#e8f5f0;" >
                 @foreach (var a in ViewBag.Annees as List<int>)

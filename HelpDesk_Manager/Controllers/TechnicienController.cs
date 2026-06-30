@@ -22,10 +22,33 @@ namespace HelpDesk_Manager.Controllers
         }
 
         // ── Mes interventions ────────────────────────────────────
-        public async Task<IActionResult> MesTickets(string? statut)
+        public async Task<IActionResult> MesTickets(string? statut, int? annee, int? idTechnicien)
         {
             ViewData["Title"] = "Mes Interventions";
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
             var idUser = int.Parse(User.FindFirst("IdUtilisateur")!.Value);
+
+            int idTechnicienCible;
+            if (role == "Helpdesk")
+            {
+                // Le helpdesk peut choisir un technicien ; sinon on prend le premier par défaut
+                ViewBag.Techniciens = await _db.Utilisateurs
+                    .Include(u => u.Role)
+                    .Where(u => u.Role!.NomRole == "Technicien" && u.IsActive)
+                    .OrderBy(u => u.Nom)
+                    .ToListAsync();
+
+                idTechnicienCible = idTechnicien ?? idUser;
+            }
+            else
+            {
+                // Un technicien ne voit que ses propres interventions
+                idTechnicienCible = idUser;
+            }
+
+            ViewBag.IdUserConnecte = idUser;
+
+            var anneeEnCours = annee ?? DateTime.Now.Year;
 
             var query = _db.Interventions
                 .Include(i => i.Ticket)
@@ -35,7 +58,7 @@ namespace HelpDesk_Manager.Controllers
                 .Include(i => i.Ticket)
                     .ThenInclude(t => t!.Urgence)
                 .Include(i => i.Statut)
-                .Where(i => i.IdTechnicien == idUser)
+                .Where(i => i.IdTechnicien == idTechnicienCible && i.Ticket!.DateOuverture.Year == anneeEnCours)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(statut))
@@ -47,6 +70,15 @@ namespace HelpDesk_Manager.Controllers
 
             ViewBag.Statut = statut;
             ViewBag.Statuts = await _db.StatutsIntervention.ToListAsync();
+            ViewBag.Annee = anneeEnCours;
+            ViewBag.IdTechnicien = idTechnicienCible;
+            ViewBag.Role = role;
+            ViewBag.Annees = await _db.Interventions
+                .Where(i => i.IdTechnicien == idTechnicienCible)
+                .Select(i => i.Ticket!.DateOuverture.Year)
+                .Distinct()
+                .OrderByDescending(a => a)
+                .ToListAsync();
 
             return View(interventions);
         }
@@ -56,8 +88,9 @@ namespace HelpDesk_Manager.Controllers
         {
             ViewData["Title"] = $"Intervention #{id}";
             var idUser = int.Parse(User.FindFirst("IdUtilisateur")!.Value);
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
 
-            var intervention = await _db.Interventions
+            var query = _db.Interventions
                 .Include(i => i.Ticket)
                     .ThenInclude(t => t!.Statut)
                 .Include(i => i.Ticket)
@@ -82,7 +115,13 @@ namespace HelpDesk_Manager.Controllers
                     .ThenInclude(t => t!.Historique)
                         .ThenInclude(h => h.Utilisateur)
                 .Include(i => i.Statut)
-                .FirstOrDefaultAsync(i => i.IdIntervention == id && i.IdTechnicien == idUser);
+                .Where(i => i.IdIntervention == id);
+
+            // Un technicien ne peut voir que ses propres interventions ; le helpdesk peut voir celles de tous
+            if (role != "Helpdesk")
+                query = query.Where(i => i.IdTechnicien == idUser);
+
+            var intervention = await query.FirstOrDefaultAsync();
 
             if (intervention == null) return NotFound();
 
@@ -96,11 +135,16 @@ namespace HelpDesk_Manager.Controllers
         public async Task<IActionResult> MettreAJourStatut(int idIntervention, int idStatut, string? motifStatut)
         {
             var idUser = int.Parse(User.FindFirst("IdUtilisateur")!.Value);
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
 
-            var intervention = await _db.Interventions
+            var queryIntervention = _db.Interventions
                 .Include(i => i.Statut)
-                .FirstOrDefaultAsync(i => i.IdIntervention == idIntervention
-                                       && i.IdTechnicien == idUser);
+                .Where(i => i.IdIntervention == idIntervention);
+
+            if (role != "Helpdesk")
+                queryIntervention = queryIntervention.Where(i => i.IdTechnicien == idUser);
+
+            var intervention = await queryIntervention.FirstOrDefaultAsync();
 
             if (intervention == null) return NotFound();
             var ancienStatut = intervention.Statut?.NomStatut;
@@ -239,10 +283,15 @@ namespace HelpDesk_Manager.Controllers
         public async Task<IActionResult> AjouterNote(int idIntervention, string note)
         {
             var idUser = int.Parse(User.FindFirst("IdUtilisateur")!.Value);
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
 
-            var intervention = await _db.Interventions
-                .FirstOrDefaultAsync(i => i.IdIntervention == idIntervention
-                                       && i.IdTechnicien == idUser);
+            var queryIntervention = _db.Interventions
+                .Where(i => i.IdIntervention == idIntervention);
+
+            if (role != "Helpdesk")
+                queryIntervention = queryIntervention.Where(i => i.IdTechnicien == idUser);
+
+            var intervention = await queryIntervention.FirstOrDefaultAsync();
 
             if (intervention == null) return NotFound();
 
