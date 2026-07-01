@@ -355,17 +355,22 @@
             </a>
         }
 
-        @if (role == "Administrateur")
-        {
-            <div class="nav-section">Administration</div>
-            <a class="nav-link" href="@Url.Action("Index","Admin")">
-                <span class="icon">⚙️</span> Gestion utilisateurs
-            </a>
+            @if (role == "Administrateur")
+            {
+                <div class="nav-section">Administration</div>
+                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() != "SLA" && ViewContext.RouteData.Values["action"]?.ToString() != "Categories" ? "active" : "")"
+                   href="@Url.Action("Index","Admin")">
+                    <span class="icon">⚙️</span> Gestion utilisateurs
+                </a>
+                <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Categories" ? "active" : "")"
+                   href="@Url.Action("Categories","Admin")">
+                    <span class="icon">🗂️</span> Gestion catégories
+                </a>
                 <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "SLA" ? "active" : "")"
                    href="@Url.Action("SLA","Admin")">
                     <span class="icon">⏱️</span> Configuration SLA
                 </a>
-        }
+            }
     </nav>
 </aside>
 

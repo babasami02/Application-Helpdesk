@@ -57,7 +57,8 @@ namespace HelpDesk_Manager.Models
         public bool IsActive { get; set; } = true;
 
         public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
-        // TODO (futur) : ICollection<Categorie> Categories { get; set; }
+        public ICollection<Categorie> Categories { get; set; } = new List<Categorie>();
+
     }
 
     //------------ Categorie -----------------------
@@ -65,6 +66,7 @@ namespace HelpDesk_Manager.Models
     {
         [Key] public int IdCategorie { get; set; }
         [Required, MaxLength(100)] public string NomCategorie { get; set; } = "";
+        public bool IsActive { get; set; } = true;
 
         public int IdDomaine { get; set; }
         [ForeignKey(nameof(IdDomaine))] public Domaine? Domaine { get; set; }
@@ -78,6 +80,7 @@ namespace HelpDesk_Manager.Models
     {
         [Key] public int IdSousCategorie { get; set; }
         [Required, MaxLength(100)] public string NomSousCategorie { get; set; } = "";
+        public bool IsActive { get; set; } = true;
 
         public int IdCategorie { get; set; }
         [ForeignKey(nameof(IdCategorie))] public Categorie? Categorie { get; set; }
@@ -256,20 +259,16 @@ namespace HelpDesk_Manager.Models
         public bool IsLue { get; set; } = false;
     }
     // Configuration SLA
+    // APRÈS
     public class ConfigurationSLA
     {
         [Key] public int IdSLA { get; set; }
 
-        public int IdUrgence { get; set; }
-        [ForeignKey(nameof(IdUrgence))] public NiveauUrgence? Urgence { get; set; }
+        [Required, MaxLength(5)] public string Priorite { get; set; } = "";
 
-        public int IdImpact { get; set; }
-        [ForeignKey(nameof(IdImpact))] public NiveauImpact? Impact { get; set; }
-
-        public int? IdDomaine { get; set; }
+        public int IdDomaine { get; set; }
         [ForeignKey(nameof(IdDomaine))] public Domaine? Domaine { get; set; }
 
-        [Required, MaxLength(5)] public string PrioriteResultante { get; set; } = "";
         public int DelaiReponsHeures { get; set; }
         public int DelaiResolutionHeures { get; set; }
         [MaxLength(200)] public string? Description { get; set; }

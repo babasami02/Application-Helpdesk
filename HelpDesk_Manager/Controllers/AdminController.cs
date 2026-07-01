@@ -158,17 +158,13 @@ namespace HelpDesk_Manager.Controllers
             ViewData["Title"] = "Configuration SLA";
 
             var slas = await _db.ConfigurationsSLA
-                .Include(s => s.Urgence)
-                .Include(s => s.Impact)
                 .Include(s => s.Domaine)
-                .Where(s => s.IdDomaine != null)
-                .OrderBy(s => s.Urgence!.Ordre)
-                .ThenBy(s => s.Impact!.Ordre)
+                .OrderBy(s => s.Priorite)
+                .ThenBy(s => s.Domaine!.NomDomaine)
                 .ToListAsync();
 
-            ViewBag.Urgences = await _db.NiveauxUrgence.OrderBy(u => u.Ordre).ToListAsync();
-            ViewBag.Impacts = await _db.NiveauxImpact.OrderBy(i => i.Ordre).ToListAsync();
-            ViewBag.Domaines = await _db.Domaines.Where(c => c.IsActive).ToListAsync();
+            ViewBag.Domaines = await _db.Domaines.OrderBy(d => d.IdDomaine).ToListAsync();
+            ViewBag.Priorites = new List<string> { "P1", "P2", "P3", "P4" };
 
             return View(slas);
         }
@@ -188,6 +184,118 @@ namespace HelpDesk_Manager.Controllers
             await _db.SaveChangesAsync();
             TempData["Success"] = "SLA mis à jour avec succès.";
             return RedirectToAction("SLA");
+        }
+
+        // ── Catégories / Sous-catégories ─────────────────────────────
+        public async Task<IActionResult> Categories(int? idDomaine)
+        {
+            ViewData["Title"] = "Gestion des catégories";
+
+            var domaines = await _db.Domaines
+                .Include(d => d.Categories!.Where(c => c.IsActive))
+                    .ThenInclude(c => c.SousCategories.Where(sc => sc.IsActive))
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.IdDomaine)
+                .ToListAsync();
+
+            ViewBag.IdDomaineActif = idDomaine ?? domaines.FirstOrDefault()?.IdDomaine ?? 0;
+
+            return View(domaines);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AjouterCategorie(string nomCategorie, int idDomaine)
+        {
+            if (!string.IsNullOrWhiteSpace(nomCategorie))
+            {
+                _db.Categories.Add(new Categorie
+                {
+                    NomCategorie = nomCategorie.Trim(),
+                    IdDomaine = idDomaine
+                });
+                await _db.SaveChangesAsync();
+                TempData["Success"] = "Catégorie ajoutée.";
+            }
+            return RedirectToAction("Categories", new { idDomaine });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ModifierCategorie(int idCategorie, string nomCategorie)
+        {
+            var cat = await _db.Categories.FindAsync(idCategorie);
+            if (cat == null) return NotFound();
+            cat.NomCategorie = nomCategorie.Trim();
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Catégorie modifiée.";
+            return RedirectToAction("Categories", new { idDomaine = cat!.IdDomaine });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SupprimerCategorie(int idCategorie)
+        {
+            var cat = await _db.Categories
+                .Include(c => c.SousCategories)
+                .FirstOrDefaultAsync(c => c.IdCategorie == idCategorie);
+            if (cat == null) return NotFound();
+
+            // Désactiver la catégorie et toutes ses sous-catégories
+            cat.IsActive = false;
+            foreach (var sc in cat.SousCategories)
+                sc.IsActive = false;
+
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Catégorie désactivée.";
+            return RedirectToAction("Categories", new { idDomaine = cat!.IdDomaine });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AjouterSousCategorie(string nomSousCategorie, int idCategorie)
+        {
+            var cat = await _db.Categories.FindAsync(idCategorie);
+            if (!string.IsNullOrWhiteSpace(nomSousCategorie))
+            {
+                _db.SousCategories.Add(new SousCategorie
+                {
+                    NomSousCategorie = nomSousCategorie.Trim(),
+                    IdCategorie = idCategorie
+                });
+                await _db.SaveChangesAsync();
+                TempData["Success"] = "Sous-catégorie ajoutée.";
+            }
+            return RedirectToAction("Categories", new { idDomaine = cat!.IdDomaine });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ModifierSousCategorie(int idSousCategorie, string nomSousCategorie)
+        {
+
+            var sc = await _db.SousCategories.Include(s => s.Categorie)
+                .FirstOrDefaultAsync(s => s.IdSousCategorie == idSousCategorie);
+
+            if (sc == null) return NotFound();
+            sc.NomSousCategorie = nomSousCategorie.Trim();
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Sous-catégorie modifiée.";
+            return RedirectToAction("Categories", new { idDomaine = sc!.Categorie!.IdDomaine });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SupprimerSousCategorie(int idSousCategorie)
+        {
+            var sc = await _db.SousCategories.Include(s => s.Categorie)
+                .FirstOrDefaultAsync(s => s.IdSousCategorie == idSousCategorie);
+            if (sc == null) return NotFound();
+
+            sc.IsActive = false;
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Sous-catégorie désactivée.";
+            return RedirectToAction("Categories", new { idDomaine = sc!.Categorie!.IdDomaine });
         }
     }
 }

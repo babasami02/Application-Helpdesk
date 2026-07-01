@@ -139,19 +139,20 @@ namespace HelpDesk_Manager.Controllers
             var urgence = await _db.NiveauxUrgence.FindAsync(idUrgence.Value);
             var impact = await _db.NiveauxImpact.FindAsync(idImpact.Value);
 
-            // Chercher SLA spécifique au domaine
+            // Calculer la priorité depuis urgence × impact
+            var prioriteCalculee = CalculerPriorite(urgence!.Ordre, impact!.Ordre);
+            ticket.PrioriteCalculee = prioriteCalculee;
+
+            // Chercher le SLA correspondant à cette priorité et ce domaine
             var sla = await _db.ConfigurationsSLA
-                .FirstOrDefaultAsync(s => s.IdUrgence == idUrgence.Value
-                                        && s.IdImpact == idImpact.Value
+                .FirstOrDefaultAsync(s => s.Priorite == prioriteCalculee
                                         && s.IdDomaine == idDomaine.Value);
 
-            ticket.PrioriteCalculee = sla?.PrioriteResultante
-                                          ?? CalculerPriorite(urgence!.Ordre, impact!.Ordre);
             ticket.DelaiResolutionCible = sla != null
                                           ? DateTime.Now.AddHours(sla.DelaiResolutionHeures)
                                           : null;
 
-            
+
 
             _db.HistoriqueTickets.Add(new HistoriqueTicket
             {
@@ -339,13 +340,13 @@ namespace HelpDesk_Manager.Controllers
 
             ViewBag.Categories = new SelectList(
                 ticket.IdDomaine.HasValue 
-                    ? await _db.Categories.Where(c => c.IdDomaine == ticket.IdDomaine.Value).ToListAsync()
+                    ? await _db.Categories.Where(c => c.IdDomaine == ticket.IdDomaine.Value && c.IsActive).ToListAsync()
                     : new List<Categorie>(),
                 "IdCategorie", "NomCategorie", ticket.IdCategorie);
 
             ViewBag.SousCategories = new SelectList(
                 ticket.IdCategorie.HasValue 
-                    ? await _db.SousCategories.Where(s => s.IdCategorie == ticket.IdCategorie.Value).ToListAsync()
+                    ? await _db.SousCategories.Where(s => s.IdCategorie == ticket.IdCategorie.Value && s.IsActive).ToListAsync()
                     : new List<SousCategorie>(),
                 "IdSousCategorie", "NomSousCategorie", ticket.IdSousCategorie);
 
@@ -379,7 +380,7 @@ namespace HelpDesk_Manager.Controllers
         public async Task<IActionResult> GetCategoriesByDomaine(int idDomaine)
         {
             var categories = await _db.Categories
-                .Where(c => c.IdDomaine == idDomaine)
+                .Where(c => c.IdDomaine == idDomaine && c.IsActive)
                 .Select(c => new { value = c.IdCategorie, text = c.NomCategorie })
                 .ToListAsync();
             return Json(categories);
@@ -390,7 +391,7 @@ namespace HelpDesk_Manager.Controllers
         public async Task<IActionResult> GetSousCategoriesByCategorie(int idCategorie)
         {
             var sousCategories = await _db.SousCategories
-                .Where(s => s.IdCategorie == idCategorie)
+                .Where(s => s.IdCategorie == idCategorie && s.IsActive)
                 .Select(s => new { value = s.IdSousCategorie, text = s.NomSousCategorie })
                 .ToListAsync();
             return Json(sousCategories);

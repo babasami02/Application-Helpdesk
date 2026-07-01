@@ -1,0 +1,194 @@
+﻿@model List<HelpDesk_Manager.Models.Domaine>
+@{
+    ViewData["Title"] = "Gestion des catégories";
+    var idActif = (int)(ViewBag.IdDomaineActif ?? Model.First().IdDomaine);
+}
+
+<div class="page-header">
+    <h1>Gestion des catégories et sous-catégories</h1>
+    <p>Organisez la hiérarchie Domaine → Catégorie → Sous-catégorie</p>
+</div>
+
+<div style="display:flex;gap:0;border-bottom:2px solid #e9ecef;margin-bottom:24px;overflow-x:auto;">
+    @foreach (var dom in Model)
+    {
+        <button class="onglet @(dom.IdDomaine == idActif ? "active" : "")"
+                onclick="afficherOnglet('dom_@dom.IdDomaine', this)">
+            @dom.NomDomaine
+        </button>
+    }
+</div>
+
+@foreach (var dom in Model)
+{
+    <div id="onglet_dom_@dom.IdDomaine" class="contenu-onglet"
+         style="display:@(dom.IdDomaine == idActif ? "block" : "none");">
+
+        @foreach (var cat in dom.Categories.OrderBy(c => c.NomCategorie))
+        {
+            <div class="card" style="margin-bottom:10px;">
+                <div style="padding:10px 16px;display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <button onclick="toggleSection('cat_@cat.IdCategorie')"
+                                style="background:none;border:none;cursor:pointer;font-size:13px;
+                                       color:var(--text-muted,#888);padding:0;width:16px;">
+                            ▸
+                        </button>
+                        <span style="font-size:14px;">📁</span>
+                        <span style="font-size:13px;font-weight:600;color:#1a7a5e;">@cat.NomCategorie</span>
+                        <span style="font-size:11px;background:#f0f0f0;border-radius:20px;
+                                     padding:1px 8px;color:#888;">@cat.SousCategories.Count</span>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button onclick="toggleSection('edit_cat_@cat.IdCategorie')"
+                                class="btn btn-secondary btn-sm">
+                            ✏️
+                        </button>
+                        <form method="post" asp-action="SupprimerCategorie" style="margin:0;"
+                              onsubmit="return confirm('Supprimer cette catégorie ?')">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="idCategorie" value="@cat.IdCategorie" />
+                            <button type="submit" class="btn btn-sm"
+                                    style="background:#dc3545;color:white;">
+                                🗑️
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="edit_cat_@cat.IdCategorie" style="display:none;padding:8px 16px;
+                     background:#f8f9fa;border-top:1px solid #eee;">
+                    <form method="post" asp-action="ModifierCategorie"
+                          style="display:flex;gap:8px;align-items:center;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="idCategorie" value="@cat.IdCategorie" />
+                        <input type="text" name="nomCategorie" value="@cat.NomCategorie" required
+                               style="padding:5px 10px;border:1.5px solid #1a7a5e;border-radius:6px;
+                                      font-size:13px;min-width:220px;" />
+                        <button type="submit" class="btn btn-primary btn-sm">💾</button>
+                    </form>
+                </div>
+
+                <div id="cat_@cat.IdCategorie" style="display:none;border-top:1px solid #eee;">
+                    @foreach (var sc in cat.SousCategories.OrderBy(s => s.NomSousCategorie))
+                    {
+                        <div style="padding:7px 16px 7px 46px;border-bottom:0.5px solid #f0f0f0;
+                                    display:flex;justify-content:space-between;align-items:center;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:10px;color:#ccc;">●</span>
+                                <span style="font-size:12px;color:#555;">@sc.NomSousCategorie</span>
+                            </div>
+                            <div style="display:flex;gap:4px;">
+                                <button onclick="toggleSection('edit_sc_@sc.IdSousCategorie')"
+                                        class="btn btn-secondary btn-sm"
+                                        style="padding:2px 7px;font-size:11px;">
+                                    ✏️
+                                </button>
+                                <form method="post" asp-action="SupprimerSousCategorie" style="margin:0;"
+                                      onsubmit="return confirm('Supprimer cette sous-catégorie ?')">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idSousCategorie" value="@sc.IdSousCategorie" />
+                                    <button type="submit" class="btn btn-sm"
+                                            style="padding:2px 7px;font-size:11px;background:#dc3545;color:white;">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <div id="edit_sc_@sc.IdSousCategorie"
+                             style="display:none;padding:6px 16px 6px 46px;background:#f8f9fa;
+                                    border-bottom:0.5px solid #eee;">
+                            <form method="post" asp-action="ModifierSousCategorie"
+                                  style="display:flex;gap:8px;align-items:center;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idSousCategorie" value="@sc.IdSousCategorie" />
+                                <input type="text" name="nomSousCategorie" value="@sc.NomSousCategorie"
+                                       required style="padding:4px 8px;border:1.5px solid #1a7a5e;
+                                                      border-radius:6px;font-size:12px;min-width:200px;" />
+                                <button type="submit" class="btn btn-primary btn-sm"
+                                        style="padding:4px 8px;font-size:11px;">
+                                    💾
+                                </button>
+                            </form>
+                        </div>
+                    }
+
+                    <div style="padding:8px 16px 8px 46px;background:#fafafa;">
+                        <form method="post" asp-action="AjouterSousCategorie"
+                              style="display:flex;gap:8px;align-items:center;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="idCategorie" value="@cat.IdCategorie" />
+                            <input type="text" name="nomSousCategorie" placeholder="Nouvelle sous-catégorie..."
+                                   required style="padding:4px 8px;border:1px solid #ddd;border-radius:6px;
+                                                  font-size:12px;min-width:200px;" />
+                            <button type="submit" class="btn btn-primary btn-sm"
+                                    style="padding:4px 8px;font-size:11px;">
+                                ➕ Ajouter
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="card" style="margin-top:16px;">
+            <div style="padding:10px 16px;">
+                <form method="post" asp-action="AjouterCategorie"
+                      style="display:flex;gap:10px;align-items:center;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="idDomaine" value="@dom.IdDomaine" />
+                    <input type="text" name="nomCategorie" placeholder="Nouvelle catégorie..."
+                           required style="padding:6px 12px;border:1px solid #ddd;border-radius:8px;
+                                          font-size:13px;min-width:240px;" />
+                    <button type="submit" class="btn btn-primary btn-sm">➕ Ajouter une catégorie</button>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .onglet {
+        padding: 10px 20px;
+        border: none;
+        background: none;
+        font-size: 13px;
+        font-weight: 500;
+        color: #888;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: 0.15s;
+        white-space: nowrap;
+    }
+
+        .onglet:hover {
+            color: #1a7a5e;
+        }
+
+        .onglet.active {
+            color: #1a7a5e;
+            border-bottom-color: #1a7a5e;
+            font-weight: 700;
+        }
+</style>
+
+<script>
+    function afficherOnglet(id, btn) {
+        document.querySelectorAll('.contenu-onglet').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.onglet').forEach(el => el.classList.remove('active'));
+        document.getElementById('onglet_' + id).style.display = 'block';
+        btn.classList.add('active');
+    }
+
+    function toggleSection(id) {
+        const el = document.getElementById(id);
+        const isOpen = el.style.display !== 'none';
+        el.style.display = isOpen ? 'none' : 'block';
+        if (id.startsWith('cat_')) {
+            const catId = id.replace('cat_', '');
+            const btn = document.querySelector(`button[onclick="toggleSection('cat_${catId}')"]`);
+            if (btn) btn.textContent = isOpen ? '▸' : '▾';
+        }
+    }
+</script>
