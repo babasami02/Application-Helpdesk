@@ -475,14 +475,22 @@ namespace HelpDesk_Manager.Controllers
                 .DefaultIfEmpty(0)
                 .Average();
 
-            // SLA respecté
+            // SLA respecté — on ne compte que les tickets dont le résultat est "déterminé" :
+            // soit déjà résolus, soit toujours ouverts mais déjà en dépassement du délai.
+            // Les tickets encore ouverts et toujours dans les temps sont exclus du ratio
+            // (leur sort n'est pas encore joué).
             var ticketsAvecSLA = tickets
                 .Where(t => t.DelaiResolutionCible.HasValue).ToList();
-            var slaRespece = ticketsAvecSLA.Count == 0 ? 0 :
-                ticketsAvecSLA.Count(t =>
+
+            var ticketsSLADetermines = ticketsAvecSLA
+                .Where(t => t.DateResolution.HasValue || DateTime.Now > t.DelaiResolutionCible)
+                .ToList();
+
+            var slaRespece = ticketsSLADetermines.Count == 0 ? 0 :
+                ticketsSLADetermines.Count(t =>
                     t.DateResolution.HasValue &&
                     t.DateResolution <= t.DelaiResolutionCible) * 100.0
-                / ticketsAvecSLA.Count;
+                / ticketsSLADetermines.Count;
 
             // CFR — tickets résolus avec 1 seule intervention
             var cfr = ticketsFermes.Count == 0 ? 0 :
