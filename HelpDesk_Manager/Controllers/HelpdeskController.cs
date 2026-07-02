@@ -21,13 +21,38 @@ namespace HelpDesk_Manager.Controllers
             _db = db;
             _notif = notif;
         }
+
         // ── Consultation tickets ─────────────────────────────────
-        public async Task<IActionResult> Index(string? recherche, string? statut,
-                                        string? priorite, int? domaine, int? annee, int page = 1)
+        public async Task<IActionResult> Index(string? recherche, string? statuts,
+                                        string? priorites, string? domaines,
+                                        int? annee, string? filtre, int page = 1)
         {
             ViewData["Title"] = "Consultation Tickets";
 
-            annee ??= DateTime.Now.Year; 
+            annee ??= DateTime.Now.Year;
+
+            // --- Détermination des statuts actifs ---
+            List<string> statutsList;
+            if (string.IsNullOrEmpty(filtre))
+            {
+                // Premier chargement de la page : filtre par défaut
+                statutsList = new List<string> { "Nouveau", "En cours" };
+            }
+            else
+            {
+                statutsList = string.IsNullOrEmpty(statuts)
+                    ? new List<string>()
+                    : statuts.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+            }
+
+            var prioritesList = string.IsNullOrEmpty(priorites)
+                ? new List<string>()
+                : priorites.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            var domainesList = string.IsNullOrEmpty(domaines)
+                ? new List<int>()
+                : domaines.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                          .Select(int.Parse).ToList();
 
             var query = _db.Tickets
                 .Include(t => t.Statut)
@@ -43,37 +68,55 @@ namespace HelpDesk_Manager.Controllers
                 query = query.Where(t => t.Titre.Contains(recherche) ||
                                          t.IdTicket.ToString().Contains(recherche));
 
-            if (!string.IsNullOrEmpty(statut))
-                query = query.Where(t => t.Statut!.NomStatut == statut);
+            if (statutsList.Any())
+                query = query.Where(t => statutsList.Contains(t.Statut!.NomStatut));
 
-            if (!string.IsNullOrEmpty(priorite))
-                query = query.Where(t => t.PrioriteCalculee == priorite);
+            if (prioritesList.Any())
+                query = query.Where(t => prioritesList.Contains(t.PrioriteCalculee!));
 
-            if (domaine.HasValue)
-                query = query.Where(t => t.IdDomaine == domaine);
+            if (domainesList.Any())
+                query = query.Where(t => t.IdDomaine.HasValue && domainesList.Contains(t.IdDomaine.Value));
 
-            query = query.OrderByDescending(t => t.DateOuverture);
+            // Nouveau en haut, puis En cours, puis le reste, triés par date décroissante
+            query = query
+                .OrderBy(t => t.Statut!.NomStatut == "Nouveau" ? 0
+                            : t.Statut!.NomStatut == "En cours" ? 1
+                            : 2)
+                .ThenByDescending(t => t.DateOuverture);
+
+            // --- Est-on dans l'état de filtre par défaut ? ---
+            bool estFiltreParDefaut = string.IsNullOrEmpty(filtre);
+            if (!estFiltreParDefaut)
+            {
+                bool statutsSontParDefaut = statutsList.Count == 2
+                    && statutsList.Contains("Nouveau") && statutsList.Contains("En cours");
+
+                estFiltreParDefaut = statutsSontParDefaut
+                    && string.IsNullOrEmpty(recherche)
+                    && !prioritesList.Any()
+                    && !domainesList.Any();
+            }
 
             var resultat = PagedList<Ticket>.Creer(query, page, 10);
 
             ViewBag.Recherche = recherche;
-            ViewBag.Statut = statut;
-            ViewBag.Priorite = priorite;
+            ViewBag.StatutsSelectionnes = statutsList;
+            ViewBag.PrioritesSelectionnees = prioritesList;
+            ViewBag.DomainesSelectionnes = domainesList;
             ViewBag.Annee = annee;
             ViewBag.Annees = await _db.Tickets
                 .Select(t => t.DateOuverture.Year)
                 .Distinct()
                 .OrderByDescending(y => y)
                 .ToListAsync();
-            ViewBag.Domaine = domaine;
 
             ViewBag.Statuts = await _db.StatutsTicket.ToListAsync();
-            ViewBag.Domaines = new SelectList(
-                await _db.Domaines.ToListAsync(), "IdDomaine", "NomDomaine");
+            ViewBag.Domaines = await _db.Domaines.OrderBy(d => d.IdDomaine).ToListAsync();
             ViewBag.PageActuelle = resultat.PageActuelle;
             ViewBag.TotalPages = resultat.TotalPages;
             ViewBag.TotalItems = resultat.TotalItems;
             ViewBag.PageSize = resultat.PageSize;
+            ViewBag.FiltreParDefaut = estFiltreParDefaut;
 
             return View(resultat.Items);
         }

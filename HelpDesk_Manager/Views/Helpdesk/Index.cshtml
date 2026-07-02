@@ -17,12 +17,17 @@
 </div>
 
 @* Filtres *@
-<div class="card" style="margin-bottom:20px;">
+<div class="card" style="margin-bottom:20px; overflow: visible; position: relative; z-index: 10;">
     <div class="card-body" style="padding:14px 20px;">
-        <form method="get" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <form method="get" id="filtresForm" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <input type="hidden" name="filtre" value="1" />
+            <input type="hidden" name="statuts" id="hiddenStatuts" />
+            <input type="hidden" name="priorites" id="hiddenPriorites" />
+            <input type="hidden" name="domaines" id="hiddenDomaines" />
+
             <select name="annee" onchange="this.form.submit()" style="padding:8px 12px;border:2px solid #1a7a5e;border-radius:8px;
                              font-size:13px;outline:none;font-weight:600;color:#1a7a5e;
-                             background:#e8f5f0;" >
+                             background:#e8f5f0;">
                 @foreach (var a in ViewBag.Annees as List<int>)
                 {
                     <option value="@a" selected="@((int)ViewBag.Annee == a ? "selected" : null)">
@@ -30,44 +35,174 @@
                     </option>
                 }
             </select>
+
             <input type="text" name="recherche" value="@ViewBag.Recherche"
                    placeholder="🔍 N° ticket ou mot-clé..."
                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;width:220px;outline:none;" />
 
-            <select name="statut"
-                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;">
-                <option value="">Tous les statuts</option>
-                @foreach (var s in ViewBag.Statuts as List<HelpDesk_Manager.Models.StatutTicket>)
+            @* --- Dropdown Statuts --- *@
+            @{
+                var statutsSel = (List<string>)ViewBag.StatutsSelectionnes;
+            }
+            <div class="multi-select" id="dropdownStatut">
+                <div class="multi-select-toggle" onclick="toggleDropdown('dropdownStatut')">
+                    <span id="statutLabel">@(statutsSel.Any() ? statutsSel.Count + " statut(s)" : "Tous les statuts")</span> ▾
+                </div>
+                <div class="multi-select-menu">
+                    @foreach (var s in ViewBag.Statuts as List<HelpDesk_Manager.Models.StatutTicket>)
+                    {
+                        var estCoche = statutsSel.Contains(s.NomStatut);
+                        <label>
+                            <input type="checkbox" class="ms-statut" value="@s.NomStatut"
+                                   onchange="majLabel('statut','Tous les statuts')" checked="@(estCoche ? "checked" : null)" />
+                            @s.NomStatut
+                        </label>
+                    }
+                </div>
+            </div>
+
+            @* --- Dropdown Priorités --- *@
+            @{
+                var prioritesSel = (List<string>)ViewBag.PrioritesSelectionnees;
+                var prioritesDispo = new (string val, string label)[]
                 {
-                    <option value="@s.NomStatut"
-                            selected="@(ViewBag.Statut == s.NomStatut ? "selected" : null)">
-                        @s.NomStatut
-                    </option>
-                }
-            </select>
+            ("P1", "🔴 P1 - Critique"), ("P2", "🟠 P2 - Haute"),
+            ("P3", "🟡 P3 - Moyenne"), ("P4", "🟢 P4 - Basse")
+                };
+            }
+            <div class="multi-select" id="dropdownPriorite">
+                <div class="multi-select-toggle" onclick="toggleDropdown('dropdownPriorite')">
+                    <span id="prioriteLabel">@(prioritesSel.Any() ? prioritesSel.Count + " priorité(s)" : "Toutes priorités")</span> ▾
+                </div>
+                <div class="multi-select-menu">
+                    @foreach (var p in prioritesDispo)
+                    {
+                        var estCoche = prioritesSel.Contains(p.val);
+                        <label>
+                            <input type="checkbox" class="ms-priorite" value="@p.val"
+                                   onchange="majLabel('priorite','Toutes priorités')" checked="@(estCoche ? "checked" : null)" />
+                            @p.label
+                        </label>
+                    }
+                </div>
+            </div>
 
-            <select name="priorite"
-                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;">
-                <option value="">Toutes priorités</option>
-                <option value="P1" selected="@(ViewBag.Priorite == "P1" ? "selected" : null)">🔴 P1 - Critique</option>
-                <option value="P2" selected="@(ViewBag.Priorite == "P2" ? "selected" : null)">🟠 P2 - Haute</option>
-                <option value="P3" selected="@(ViewBag.Priorite == "P3" ? "selected" : null)">🟡 P3 - Moyenne</option>
-                <option value="P4" selected="@(ViewBag.Priorite == "P4" ? "selected" : null)">🟢 P4 - Basse</option>
-            </select>
-
-            <select name="domaine" asp-items="ViewBag.Domaines"
-                    style="padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;outline:none;">
-                <option value="">Tous les domaines</option>
-            </select>
+            @* --- Dropdown Domaines --- *@
+            @{
+                var domainesSel = (List<int>)ViewBag.DomainesSelectionnes;
+            }
+            <div class="multi-select" id="dropdownDomaine">
+                <div class="multi-select-toggle" onclick="toggleDropdown('dropdownDomaine')">
+                    <span id="domaineLabel">@(domainesSel.Any() ? domainesSel.Count + " domaine(s)" : "Tous les domaines")</span> ▾
+                </div>
+                <div class="multi-select-menu">
+                    @foreach (var d in ViewBag.Domaines as List<HelpDesk_Manager.Models.Domaine>)
+                    {
+                        var estCoche = domainesSel.Contains(d.IdDomaine);
+                        <label>
+                            <input type="checkbox" class="ms-domaine" value="@d.IdDomaine"
+                                   onchange="majLabel('domaine','Tous les domaines')" checked="@(estCoche ? "checked" : null)" />
+                            @d.NomDomaine
+                        </label>
+                    }
+                </div>
+            </div>
 
             <button type="submit" class="btn btn-primary btn-sm">Filtrer</button>
-            @if (ViewBag.Recherche != null || ViewBag.Statut != null || ViewBag.Priorite != null || ViewBag.Domaine != null)
+            @if (!(bool)ViewBag.FiltreParDefaut)
             {
                 <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">✕ Réinitialiser</a>
             }
         </form>
     </div>
 </div>
+
+<style>
+    .multi-select {
+        position: relative;
+        display: inline-block;
+    }
+
+    .multi-select-toggle {
+        padding: 8px 12px;
+        border: 1.5px solid #ddd;
+        border-radius: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        background: #fff;
+        min-width: 150px;
+        user-select: none;
+        color: #444;
+    }
+
+        .multi-select-toggle:hover {
+            border-color: #1a7a5e;
+        }
+
+    .multi-select-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        padding: 8px;
+        z-index: 50;
+        min-width: 190px;
+        max-height: 230px;
+        overflow-y: auto;
+    }
+
+        .multi-select-menu.open {
+            display: block;
+        }
+
+        .multi-select-menu label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+            .multi-select-menu label:hover {
+                background: #e8f5f0;
+            }
+</style>
+
+<script>
+    function toggleDropdown(id) {
+        document.querySelectorAll('.multi-select-menu.open').forEach(function (el) {
+            if (el.closest('.multi-select').id !== id) el.classList.remove('open');
+        });
+        document.querySelector('#' + id + ' .multi-select-menu').classList.toggle('open');
+    }
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.multi-select')) {
+            document.querySelectorAll('.multi-select-menu.open').forEach(function (el) {
+                el.classList.remove('open');
+            });
+        }
+    });
+    function majLabel(groupe, texteParDefaut) {
+        var coches = Array.from(document.querySelectorAll('.ms-' + groupe + ':checked')).map(c => c.value);
+        var label = document.getElementById(groupe + 'Label');
+        label.textContent = coches.length === 0 ? texteParDefaut : coches.length + ' sélectionné(s)';
+    }
+    document.getElementById('filtresForm').addEventListener('submit', function () {
+        document.getElementById('hiddenStatuts').value =
+            Array.from(document.querySelectorAll('.ms-statut:checked')).map(c => c.value).join(',');
+        document.getElementById('hiddenPriorites').value =
+            Array.from(document.querySelectorAll('.ms-priorite:checked')).map(c => c.value).join(',');
+        document.getElementById('hiddenDomaines').value =
+            Array.from(document.querySelectorAll('.ms-domaine:checked')).map(c => c.value).join(',');
+    });
+</script>
 
 @* Tableau *@
 <div class="card">
@@ -171,9 +306,10 @@
     ["RouteValues"] = new Dictionary<string, string>
     {
         ["recherche"] = ViewBag.Recherche ?? "",
-        ["statut"] = ViewBag.Statut ?? "",
-        ["priorite"] = ViewBag.Priorite ?? "",
-        ["domaine"] = ViewBag.Domaine?.ToString() ?? "",
-        ["annee"] = ViewBag.Annee?.ToString() ?? ""
+        ["statuts"] = string.Join(",", (List<string>)ViewBag.StatutsSelectionnes),
+        ["priorites"] = string.Join(",", (List<string>)ViewBag.PrioritesSelectionnees),
+        ["domaines"] = string.Join(",", (List<int>)ViewBag.DomainesSelectionnes),
+        ["annee"] = ViewBag.Annee?.ToString() ?? "",
+        ["filtre"] = "1"
     }
 })
